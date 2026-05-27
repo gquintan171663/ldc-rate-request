@@ -307,7 +307,7 @@
 
 <div class="subject-bar">
   <span class="lbl">Subject</span>
-  <div class="val empty" id="subjectPreview">RR - [fill the form to build the subject]</div>
+  <div class="val empty" id="subjectPreview">RR - Sales Lead / [fill the form to build the subject]</div>
   <button type="button" class="copy-subj" onclick="copySubject()">Copy</button>
 </div>
 
@@ -321,7 +321,6 @@
 
     <div class="section">SHIPMENT REFERENCE</div>
     <table>
-      <tr><td class="lbl">Sales Lead</td><td><input class="fld" id="f_sales" placeholder="Your name / initials — appears in subject"></td></tr>
       <tr><td class="lbl">Date / Quote ref.</td><td><input class="fld" id="f_date" placeholder="DD-MMM-YYYY / ref."></td></tr>
       <tr><td class="lbl">Trade lane</td><td class="opts">
         <span class="opt" data-group="lane"><span class="box"></span>Export</span>
@@ -665,8 +664,8 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
   }
 
   // Build the full subject string.
+  // Prefix "RR - Sales Lead" is fixed; everything after is built from the form.
   function buildSubject(){
-    var lead = v('f_sales');
     var date = v('f_date');
     var lane = group('lane');         // Export / Import
     var cust = v('f_customer');
@@ -674,8 +673,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var dest   = endpointToken('pod');
     var scope  = group('scope');
 
-    var parts = ['RR'];
-    if(lead) parts.push(lead);
+    var parts = [];
     if(date) parts.push(date);
     if(lane) parts.push(lane);
     if(cust) parts.push(cust);
@@ -684,9 +682,8 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     }
     if(scope) parts.push(scope);
 
-    // "RR" is always first; the rest joined by " / ".  Use " - " between RR and the first field.
-    if(parts.length===1)return 'RR - [fill the form to build the subject]';
-    return parts[0]+' - '+parts.slice(1).join(' / ');
+    if(parts.length===0)return 'RR - Sales Lead / [fill the form to build the subject]';
+    return 'RR - Sales Lead / '+parts.join(' / ');
   }
 
   function updateSubject(){
@@ -795,7 +792,6 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     function close(){H+='<tr><td style="padding:2px 22px;"><table cellpadding="0" cellspacing="0" border="0" width="100%">'+rows+'</table></td></tr>';}
 
     sec('SHIPMENT REFERENCE');open();
-      row('Sales Lead', esc(v('f_sales')));
       row('Date / Quote ref.', esc(v('f_date')));
       row('Trade lane', group('lane'));
       row('Business status', group('status'));
