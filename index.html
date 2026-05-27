@@ -49,6 +49,53 @@
   .btn-img{background:#1A1A1A;color:#fff;}
   .btn-print{background:#fff;color:var(--ink);border:1px solid #CCC;}
   .btn-reset{background:#fff;color:#888;border:1px solid #DDD;}
+  .btn-subj{background:#1A1A1A;color:#fff;}
+
+  /* Subject preview bar — sits above the sheet so the user sees the
+     auto-built email subject and can copy it with one click. */
+  .subject-bar{
+    max-width:640px;
+    margin:0 auto 14px;
+    background:#FFFFFF;
+    border:1px solid #DADADA;
+    border-left:4px solid var(--red);
+    border-radius:8px;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow:0 1px 6px rgba(0,0,0,.04);
+    font-family:Arial,Helvetica,sans-serif;
+  }
+  .subject-bar .lbl{
+    font-size:10px;font-weight:700;letter-spacing:1.2px;
+    color:var(--red-dark);text-transform:uppercase;
+    flex:none;
+  }
+  .subject-bar .val{
+    flex:1;
+    font-family:'Courier New',monospace;
+    font-size:12.5px;
+    color:var(--ink);
+    background:#FAFAFA;
+    border:1px solid #EEE;
+    border-radius:4px;
+    padding:7px 10px;
+    overflow-x:auto;
+    white-space:nowrap;
+    line-height:1.4;
+  }
+  .subject-bar .val.empty{color:#BBB;font-style:italic;}
+  .subject-bar .copy-subj{
+    flex:none;background:var(--red);color:#fff;
+    font-size:12px;font-weight:600;padding:8px 12px;
+    border:none;border-radius:5px;cursor:pointer;
+  }
+  .subject-bar .copy-subj:hover{background:var(--red-dark);}
+  @media (max-width:540px){
+    .subject-bar{flex-wrap:wrap;}
+    .subject-bar .val{order:3;width:100%;}
+  }
 
   .sheet{
     max-width:640px;
@@ -239,6 +286,7 @@
   @media print{
     body{background:#fff;padding:0;}
     .toolbar{display:none;}
+    .subject-bar{display:none;}
     .sheet{border:none;box-shadow:none;max-width:100%;}
     .fld{border-bottom:1px solid #ccc;}
     .route-input-row,.route-hint,.btn-add{display:none;}
@@ -257,6 +305,12 @@
   <span class="hint">Fill the fields, then choose how to copy → Ctrl+V in Outlook. In POL / POD start typing a port name or code to pick from the UN/LOCODE list.</span>
 </div>
 
+<div class="subject-bar">
+  <span class="lbl">Subject</span>
+  <div class="val empty" id="subjectPreview">RR - [fill the form to build the subject]</div>
+  <button type="button" class="copy-subj" onclick="copySubject()">Copy</button>
+</div>
+
 <div class="sheet" id="sheet">
   <div class="header">
     <div class="title">RATE REQUEST — SALES LEAD</div>
@@ -267,6 +321,7 @@
 
     <div class="section">SHIPMENT REFERENCE</div>
     <table>
+      <tr><td class="lbl">Sales Lead</td><td><input class="fld" id="f_sales" placeholder="Your name / initials — appears in subject"></td></tr>
       <tr><td class="lbl">Date / Quote ref.</td><td><input class="fld" id="f_date" placeholder="DD-MMM-YYYY / ref."></td></tr>
       <tr><td class="lbl">Trade lane</td><td class="opts">
         <span class="opt" data-group="lane"><span class="box"></span>Export</span>
@@ -282,6 +337,7 @@
 
     <div class="section">PARTIES</div>
     <table>
+      <tr><td class="lbl">Customer / Account</td><td><input class="fld" id="f_customer" placeholder="Customer name — appears in subject"></td></tr>
       <tr><td class="lbl">Shipper / BCO</td><td><textarea class="fld" id="f_shipper" rows="3" placeholder="Company&#10;Address&#10;Contact / email / phone"></textarea></td></tr>
       <tr><td class="lbl">Consignee</td><td><textarea class="fld" id="f_consignee" rows="3" placeholder="Company&#10;Address&#10;Contact / email / phone"></textarea></td></tr>
     </table>
@@ -543,6 +599,140 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     return arr;
   }
 
+  // ===== Subject builder =====
+  // Format: RR - SalesLead / Date / Export|Import / Customer / Origin > Destination / Scope
+  //
+  // Origin / destination rules:
+  //   - 1 port  -> "City (COUNTRY)" using UN/LOCODE country code
+  //   - many ports, same country  -> "COUNTRY multiple"
+  //   - many ports, different countries -> "Multiple"
+  //   - free-text (no LOCODE match) -> use the text as-is
+  //
+  // PORTS is the same global UN/LOCODE list used by the autocomplete:
+  //   PORTS[i] = [code, name, countryCode]   e.g. ["MXATM","Altamira","MX"]
+
+  // Look up a port entry by the chip text the user added.
+  // Chip text is either "Name (CODE)" (picked from autocomplete) or free text.
+  function findPort(chipText){
+    if(!chipText)return null;
+    // Try to extract a UN/LOCODE in parentheses, e.g. "Altamira (MXATM)"
+    var m=chipText.match(/\(([A-Z]{5})\)\s*$/);
+    if(m){
+      var code=m[1];
+      for(var i=0;i<PORTS.length;i++){
+        if(PORTS[i][0]===code)return PORTS[i];
+      }
+    }
+    return null; // free text — no country lookup possible
+  }
+
+  // Build a compact origin/destination token for the subject.
+  // `key` is 'pol' or 'pod'.  Falls back to POR / POD2 if the port list is empty.
+  function endpointToken(key){
+    var arr=routeValues(key);
+    // If no port specified, try the matching place field as a fallback.
+    if(!arr.length){
+      var fallback=(key==='pol')?routeValues('por'):routeValues('pod2');
+      if(!fallback.length)return '';
+      // Place fields have no country code — return the first as-is.
+      if(fallback.length===1)return fallback[0];
+      return 'Multiple';
+    }
+    if(arr.length===1){
+      var p=findPort(arr[0]);
+      if(p){
+        var cc=p[2]||'';
+        // City (CC) — keep the country code short; full name is too long for a subject.
+        return p[1]+' ('+cc+')';
+      }
+      return arr[0]; // free text — use as-is
+    }
+    // Multiple chips: check if they all resolve to the same country.
+    var countries={};
+    var resolvedAll=true;
+    arr.forEach(function(chip){
+      var p=findPort(chip);
+      if(p && p[2]){countries[p[2]]=true;}
+      else{resolvedAll=false;}
+    });
+    var keys=Object.keys(countries);
+    if(resolvedAll && keys.length===1){
+      // All ports in the same country.
+      var cName=(typeof COUNTRIES!=='undefined' && COUNTRIES[keys[0]])?COUNTRIES[keys[0]]:keys[0];
+      return cName+' multiple';
+    }
+    return 'Multiple';
+  }
+
+  // Build the full subject string.
+  function buildSubject(){
+    var lead = v('f_sales');
+    var date = v('f_date');
+    var lane = group('lane');         // Export / Import
+    var cust = v('f_customer');
+    var origin = endpointToken('pol');
+    var dest   = endpointToken('pod');
+    var scope  = group('scope');
+
+    var parts = ['RR'];
+    if(lead) parts.push(lead);
+    if(date) parts.push(date);
+    if(lane) parts.push(lane);
+    if(cust) parts.push(cust);
+    if(origin || dest){
+      parts.push((origin||'—')+' > '+(dest||'—'));
+    }
+    if(scope) parts.push(scope);
+
+    // "RR" is always first; the rest joined by " / ".  Use " - " between RR and the first field.
+    if(parts.length===1)return 'RR - [fill the form to build the subject]';
+    return parts[0]+' - '+parts.slice(1).join(' / ');
+  }
+
+  function updateSubject(){
+    var el=document.getElementById('subjectPreview');
+    if(!el)return;
+    var s=buildSubject();
+    el.textContent=s;
+    if(s.indexOf('[fill the form')>=0){el.classList.add('empty');}
+    else{el.classList.remove('empty');}
+  }
+
+  function copySubject(){
+    var s=buildSubject();
+    if(s.indexOf('[fill the form')>=0){
+      showToast('Fill the form first to build the subject');
+      return;
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(s).then(function(){
+        showToast('Subject copied — paste it in your email subject line');
+      }).catch(function(){fallbackCopy(s);});
+    }else{fallbackCopy(s);}
+  }
+  function fallbackCopy(text){
+    var ta=document.createElement('textarea');
+    ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');showToast('Subject copied — paste it in your email subject line');}
+    catch(e){alert('Could not copy automatically. Subject:\n\n'+text);}
+    document.body.removeChild(ta);
+  }
+
+  // Wire live updates: any change to the form should refresh the subject preview.
+  document.addEventListener('input', function(e){
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA'))updateSubject();
+  });
+  document.addEventListener('click', function(e){
+    // Checkbox toggles (.opt) and route add/remove buttons.
+    if(e.target.closest('.opt') || e.target.closest('.btn-add') || e.target.closest('.rm')){
+      // Defer so the toggle/render finishes first.
+      setTimeout(updateSubject,0);
+    }
+  });
+  // Initial render after page load.
+  setTimeout(updateSubject,50);
+
   // ===== Helpers =====
   function syncInputs(){
     document.querySelectorAll('input.fld').forEach(function(i){i.setAttribute('value',i.value);});
@@ -577,6 +767,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var d=new Date();
     document.getElementById('f_date').value=('0'+d.getDate()).slice(-2)+'-'+m[d.getMonth()]+'-'+d.getFullYear();
     document.querySelectorAll('textarea').forEach(function(t){t.style.height='';});
+    updateSubject();
   }
 
   // ===== Build Outlook-safe HTML =====
@@ -604,11 +795,13 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     function close(){H+='<tr><td style="padding:2px 22px;"><table cellpadding="0" cellspacing="0" border="0" width="100%">'+rows+'</table></td></tr>';}
 
     sec('SHIPMENT REFERENCE');open();
+      row('Sales Lead', esc(v('f_sales')));
       row('Date / Quote ref.', esc(v('f_date')));
       row('Trade lane', group('lane'));
       row('Business status', group('status'));
     close();
     sec('PARTIES');open();
+      row('Customer / Account', esc(v('f_customer')));
       row('Shipper / BCO', multiline(v('f_shipper')));
       row('Consignee', multiline(v('f_consignee')));
     close();
