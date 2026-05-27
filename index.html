@@ -247,6 +247,32 @@
   .btn-add:hover{background:var(--red-dark);}
   .route-hint{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#AAA;margin-top:2px;}
 
+  /* Pre-carriage / on-carriage sub-block — only visible when transport=Ocean
+     AND the parent route field (Place of Receipt / Delivery) has content. */
+  .leg-mode{
+    margin-top:8px;
+    padding:8px 10px;
+    background:#FAFAFA;
+    border:1px dashed #D8D8D8;
+    border-radius:6px;
+  }
+  .leg-mode .leg-label{
+    font-family:Arial,Helvetica,sans-serif;
+    font-size:11px;font-weight:700;letter-spacing:.5px;
+    color:#555;text-transform:uppercase;margin-bottom:2px;
+  }
+  .leg-mode .opts{padding-top:2px;}
+  .leg-mode .req{color:var(--red);font-weight:700;}
+  /* Required-but-empty state: red border to draw attention before submit. */
+  .leg-mode.missing{border-color:var(--red);background:#FFF6F6;}
+  /* Required field highlight when validation fails. */
+  td.missing{
+    background:#FFF6F6;
+    box-shadow:inset 3px 0 0 0 var(--red);
+    border-radius:3px;
+  }
+  td.missing input.fld{border-color:var(--red);}
+
   .action{
     margin:16px 0 4px;
     padding:13px 16px;
@@ -300,7 +326,7 @@
 <div class="toolbar">
   <button class="btn-copy" onclick="copyForEmail()">Copy as text</button>
   <button class="btn-img" onclick="copyAsImage()">Copy as image</button>
-  <button class="btn-print" onclick="window.print()">Print / Save PDF</button>
+  <button class="btn-print" onclick="printForm()">Print / Save PDF</button>
   <button class="btn-reset" onclick="resetForm()">Clear</button>
   <span class="hint">Fill the fields, then choose how to copy → Ctrl+V in Outlook. In POL / POD start typing a port name or code to pick from the UN/LOCODE list.</span>
 </div>
@@ -322,11 +348,17 @@
     <div class="section">SHIPMENT REFERENCE</div>
     <table>
       <tr><td class="lbl">Date / Quote ref.</td><td><input class="fld" id="f_date" placeholder="DD-MMM-YYYY / ref."></td></tr>
-      <tr><td class="lbl">Trade lane</td><td class="opts">
+      <tr><td class="lbl">Trade lane <span class="req">*</span></td><td class="opts" data-validate="lane">
         <span class="opt" data-group="lane"><span class="box"></span>Export</span>
         <span class="opt" data-group="lane"><span class="box"></span>Import</span>
       </td></tr>
-      <tr><td class="lbl">Business status</td><td class="opts">
+      <tr><td class="lbl">Transport mode <span class="req">*</span></td><td class="opts" data-validate="tmode">
+        <span class="opt" data-group="tmode"><span class="box"></span>Ocean</span>
+        <span class="opt" data-group="tmode"><span class="box"></span>Truck</span>
+        <span class="opt" data-group="tmode"><span class="box"></span>Rail</span>
+        <span class="opt" data-group="tmode"><span class="box"></span>Air</span>
+      </td></tr>
+      <tr><td class="lbl">Business status <span class="req">*</span></td><td class="opts" data-validate="status">
         <span class="opt" data-group="status"><span class="box"></span>Prospect</span>
         <span class="opt" data-group="status"><span class="box"></span>Current customer</span>
         <span class="opt" data-group="status"><span class="box"></span>New lane</span>
@@ -336,7 +368,7 @@
 
     <div class="section">PARTIES</div>
     <table>
-      <tr><td class="lbl">Customer / Account</td><td><input class="fld" id="f_customer" placeholder="Customer name — appears in subject"></td></tr>
+      <tr><td class="lbl">Customer / Account <span class="req">*</span></td><td data-validate="f_customer"><input class="fld" id="f_customer" placeholder="Customer name — appears in subject"></td></tr>
       <tr><td class="lbl">Shipper / BCO</td><td><textarea class="fld" id="f_shipper" rows="3" placeholder="Company&#10;Address&#10;Contact / email / phone"></textarea></td></tr>
       <tr><td class="lbl">Consignee</td><td><textarea class="fld" id="f_consignee" rows="3" placeholder="Company&#10;Address&#10;Contact / email / phone"></textarea></td></tr>
     </table>
@@ -350,6 +382,13 @@
           <button type="button" class="btn-add" data-add="por" title="Add">+</button>
         </div>
         <div class="route-hint">Add one or more — Enter or “+”.</div>
+        <div class="leg-mode" id="leg_por" style="display:none;">
+          <div class="leg-label">Pre-carriage mode <span class="req">*</span></div>
+          <div class="opts">
+            <span class="opt" data-group="precar"><span class="box"></span>All Truck</span>
+            <span class="opt" data-group="precar"><span class="box"></span>Rail Combined</span>
+          </div>
+        </div>
       </td></tr>
       <tr><td class="lbl">Port of Loading (POL)</td><td>
         <ul class="route-list" id="list_pol"></ul>
@@ -374,8 +413,15 @@
           <button type="button" class="btn-add" data-add="pod2" title="Add">+</button>
         </div>
         <div class="route-hint">Add one or more — Enter or “+”.</div>
+        <div class="leg-mode" id="leg_pod2" style="display:none;">
+          <div class="leg-label">On-carriage mode <span class="req">*</span></div>
+          <div class="opts">
+            <span class="opt" data-group="oncar"><span class="box"></span>All Truck</span>
+            <span class="opt" data-group="oncar"><span class="box"></span>Rail Combined</span>
+          </div>
+        </div>
       </td></tr>
-      <tr><td class="lbl">Service scope</td><td class="opts">
+      <tr><td class="lbl">Service scope <span class="req">*</span></td><td class="opts" data-validate="scope">
         <span class="opt" data-group="scope"><span class="box"></span>Port–Port</span>
         <span class="opt" data-group="scope"><span class="box"></span>Door–Port</span>
         <span class="opt" data-group="scope"><span class="box"></span>Port–Door</span>
@@ -460,7 +506,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
   document.querySelectorAll('.opt').forEach(function(o){
     o.addEventListener('click',function(){
       var grp=o.dataset.group;
-      var single=(grp==='lane'||grp==='status');
+      var single=(grp==='lane'||grp==='status'||grp==='tmode'||grp==='precar'||grp==='oncar');
       if(single){
         document.querySelectorAll('.opt[data-group="'+grp+'"]').forEach(function(x){
           if(x!==o){x.classList.remove('on');x.querySelector('.box').textContent='';}
@@ -718,17 +764,86 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
 
   // Wire live updates: any change to the form should refresh the subject preview.
   document.addEventListener('input', function(e){
-    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA'))updateSubject();
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA')){
+      updateSubject();
+      updateLegMode();
+      // Clear "missing" highlight on the parent td once the user types in it.
+      var td=e.target.closest('td[data-validate]');
+      if(td && e.target.value.trim())td.classList.remove('missing');
+    }
   });
   document.addEventListener('click', function(e){
     // Checkbox toggles (.opt) and route add/remove buttons.
     if(e.target.closest('.opt') || e.target.closest('.btn-add') || e.target.closest('.rm')){
       // Defer so the toggle/render finishes first.
-      setTimeout(updateSubject,0);
+      setTimeout(function(){
+        updateSubject();
+        updateLegMode();
+        // Clear "missing" on a group's td once any option is picked.
+        var opt=e.target.closest('.opt');
+        if(opt){
+          var grp=opt.getAttribute('data-group');
+          var td=document.querySelector('td[data-validate="'+grp+'"]');
+          if(td && group(grp))td.classList.remove('missing');
+        }
+      },0);
     }
   });
   // Initial render after page load.
-  setTimeout(updateSubject,50);
+  setTimeout(function(){updateSubject();updateLegMode();},50);
+
+  // ===== Leg mode (pre-/on-carriage) visibility =====
+  // Show "Pre-carriage mode" under Place of Receipt and "On-carriage mode"
+  // under Place of Delivery — but only when Transport mode = Ocean AND the
+  // corresponding place field has content (either a chip already added, or
+  // text in the input box about to be added).
+  function legHasContent(key){
+    // chips already added?
+    if(routeValues(key).length>0)return true;
+    // text typed but not yet added?
+    var input=document.getElementById('f_'+key);
+    if(input && input.value.trim().length>0)return true;
+    return false;
+  }
+  function updateLegMode(){
+    var isOcean=(group('tmode')==='Ocean');
+    [['por','precar','leg_por'],['pod2','oncar','leg_pod2']].forEach(function(cfg){
+      var key=cfg[0], grp=cfg[1], boxId=cfg[2];
+      var box=document.getElementById(boxId);
+      if(!box)return;
+      var show = isOcean && legHasContent(key);
+      if(show){
+        box.style.display='block';
+        // Clear "missing" highlight once a choice is made.
+        if(group(grp))box.classList.remove('missing');
+      }else{
+        box.style.display='none';
+        box.classList.remove('missing');
+        // Clear any selection when the block hides — keeps email/subject clean.
+        document.querySelectorAll('.opt[data-group="'+grp+'"]').forEach(function(o){
+          o.classList.remove('on');
+          var b=o.querySelector('.box');if(b)b.textContent='';
+        });
+      }
+    });
+  }
+  // Returns array of missing leg-mode labels (used to warn before copy/print).
+  function missingLegModes(){
+    var missing=[];
+    var isOcean=(group('tmode')==='Ocean');
+    if(!isOcean)return missing;
+    if(legHasContent('por') && !group('precar'))missing.push('Pre-carriage mode (under Place of Receipt)');
+    if(legHasContent('pod2') && !group('oncar'))missing.push('On-carriage mode (under Place of Delivery)');
+    return missing;
+  }
+  // Highlight the missing blocks in red.
+  function flagMissingLegModes(){
+    var isOcean=(group('tmode')==='Ocean');
+    var por=document.getElementById('leg_por');
+    var pod2=document.getElementById('leg_pod2');
+    if(por){por.classList.toggle('missing', isOcean && legHasContent('por') && !group('precar'));}
+    if(pod2){pod2.classList.toggle('missing', isOcean && legHasContent('pod2') && !group('oncar'));}
+  }
 
   // ===== Helpers =====
   function syncInputs(){
@@ -764,6 +879,8 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var d=new Date();
     document.getElementById('f_date').value=('0'+d.getDate()).slice(-2)+'-'+m[d.getMonth()]+'-'+d.getFullYear();
     document.querySelectorAll('textarea').forEach(function(t){t.style.height='';});
+    clearMissingMarks();
+    document.querySelectorAll('.leg-mode.missing').forEach(function(b){b.classList.remove('missing');});
     updateSubject();
   }
 
@@ -794,6 +911,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     sec('SHIPMENT REFERENCE');open();
       row('Date / Quote ref.', esc(v('f_date')));
       row('Trade lane', group('lane'));
+      row('Transport mode', group('tmode'));
       row('Business status', group('status'));
     close();
     sec('PARTIES');open();
@@ -803,9 +921,12 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     close();
     sec('ROUTING');open();
       row('Place of Receipt', routeHTML('por'));
+      // Only include pre-carriage line when it's actually selected.
+      if(group('precar'))row('&nbsp;&nbsp;Pre-carriage mode', group('precar'));
       row('Port of Loading (POL)', routeHTML('pol'));
       row('Port of Discharge (POD)', routeHTML('pod'));
       row('Place of Delivery', routeHTML('pod2'));
+      if(group('oncar'))row('&nbsp;&nbsp;On-carriage mode', group('oncar'));
       row('Service scope', group('scope'));
       row('Incoterm', esc(v('f_inco')));
     close();
@@ -831,7 +952,61 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     return H;
   }
 
+  // ===== Pre-export validation =====
+  // Five always-required fields, plus pre-/on-carriage when transport=Ocean
+  // and the matching place field has content. If anything is missing, highlight
+  // it and warn.
+  var REQUIRED_FIELDS=[
+    {kind:'group', name:'lane',       label:'Trade lane'},
+    {kind:'group', name:'tmode',      label:'Transport mode'},
+    {kind:'group', name:'status',     label:'Business status'},
+    {kind:'input', name:'f_customer', label:'Customer / Account'},
+    {kind:'group', name:'scope',      label:'Service scope'},
+  ];
+  function clearMissingMarks(){
+    document.querySelectorAll('td.missing').forEach(function(td){td.classList.remove('missing');});
+  }
+  function validateLegModes(){
+    clearMissingMarks();
+    var missing=[];
+    var firstMissingEl=null;
+
+    // Check the five base required fields.
+    REQUIRED_FIELDS.forEach(function(f){
+      var empty=false;
+      if(f.kind==='group')empty=!group(f.name);
+      else                empty=!v(f.name);
+      if(empty){
+        missing.push(f.label);
+        var td=document.querySelector('td[data-validate="'+f.name+'"]');
+        if(td){
+          td.classList.add('missing');
+          if(!firstMissingEl)firstMissingEl=td;
+        }
+      }
+    });
+
+    // Check leg modes (pre-/on-carriage) — these only apply for Ocean + place content.
+    var legMissing=missingLegModes();
+    if(legMissing.length){
+      flagMissingLegModes();
+      missing=missing.concat(legMissing);
+      if(!firstMissingEl)firstMissingEl=document.querySelector('.leg-mode.missing');
+    }
+
+    if(missing.length===0)return true;
+    if(firstMissingEl)firstMissingEl.scrollIntoView({block:'center',behavior:'smooth'});
+    alert('Please complete the following required fields:\n\n• '+missing.join('\n• '));
+    return false;
+  }
+
+  function printForm(){
+    if(!validateLegModes())return;
+    window.print();
+  }
+
   function copyForEmail(){
+    if(!validateLegModes())return;
     syncInputs();
     var html=buildEmailHTML();
     var holder=document.getElementById('copyHolder');
@@ -856,6 +1031,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
 
   // ===== Copy as image =====
   function copyAsImage(){
+    if(!validateLegModes())return;
     syncInputs();
     var sheet=document.getElementById('sheet');
     if(typeof html2canvas==='undefined'){alert('Image library not loaded. Use "Copy as text" instead.');return;}
