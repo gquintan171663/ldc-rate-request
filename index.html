@@ -328,9 +328,20 @@
   .mr-fields{margin-top:8px;}
   .mr-field{margin:8px 0;}
   .mr-lbl{font-size:11px;color:#777;margin-bottom:3px;letter-spacing:.3px;}
+  .mr-lbl.mr-lbl-port{font-size:13px;font-weight:800;color:#1F2D3A;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 7px;padding-bottom:5px;border-bottom:2px solid #C8202E;}
   .mr-modes,.mr-equip{display:flex;flex-wrap:wrap;gap:6px;}
   .mr-hint{font-size:12px;color:#888;}
   .mr-addbtn{background:#1A1A1A;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;padding:9px 14px;cursor:pointer;margin-top:4px;}
+  .leg-btn{background:#fff;color:#1A1A1A;border:1px dashed #B9C0C7;border-radius:6px;font-size:12px;font-weight:600;padding:7px 12px;cursor:pointer;}
+  .leg-btn:hover{border-color:#1A1A1A;}
+  .leg-rm{background:none;border:none;color:#9B1B25;font-size:11px;cursor:pointer;padding:0;margin-left:8px;text-decoration:underline;}
+  .mr-leg{border:1px solid #E3E7EB;border-left:3px solid #C8202E;border-radius:6px;padding:8px 10px;margin-bottom:8px;background:#FCFCFD;}
+  .mr-leg-top{display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#1F2D3A;}
+  .mr-leg-port{font-weight:600;}
+  .mr-leg .rm{background:none;border:none;color:#9B1B25;font-size:16px;cursor:pointer;line-height:1;padding:0 2px;}
+  .mr-leg-sub{margin-top:8px;padding-top:8px;border-top:1px dashed #E3E7EB;}
+  .mr-leg-sub .mr-lbl{font-size:11px;color:#7A8794;margin-bottom:4px;}
+  .mr-leg .leg-btn{margin-top:8px;}
 </style>
 </head>
 <body>
@@ -361,8 +372,8 @@
     <table>
       <tr><td class="lbl">Date / Quote ref.</td><td><input class="fld" id="f_date" placeholder="DD-MMM-YYYY / ref."></td></tr>
       <tr><td class="lbl">Rate type <span class="req">*</span></td><td class="opts" data-validate="ratetype">
-        <span class="opt on" data-group="ratetype"><span class="box">✓</span>Spot rate</span>
-        <span class="opt" data-group="ratetype"><span class="box"></span>Multiroute</span>
+        <span class="opt on" id="rt_spot" data-group="ratetype"><span class="box">✓</span>Spot rate</span>
+        <span class="opt" id="rt_multi" data-group="ratetype"><span class="box"></span>Multiroute</span>
       </td></tr>
       <tr><td class="lbl">Trade lane <span class="req">*</span></td><td class="opts" data-validate="lane">
         <span class="opt" data-group="lane"><span class="box"></span>Export</span>
@@ -389,7 +400,10 @@
 
     <div class="section">ROUTING</div>
     <table>
-      <tr class="spot-only"><td class="lbl">Place of Receipt</td><td>
+      <tr class="spot-only" id="row_addpre" style="display:none;"><td class="lbl"></td><td>
+        <button type="button" class="leg-btn" id="btn_addpre">+ Pre-Carriage (recolección en origen)</button>
+      </td></tr>
+      <tr class="spot-only" id="row_por"><td class="lbl">Place of Receipt <button type="button" class="leg-rm ocean-rm" id="rm_pre" style="display:none;">quitar</button></td><td>
         <ul class="route-list" id="list_por"></ul>
         <div class="route-input-row">
           <div class="ac-wrap"><input class="fld ac-port" id="f_por" autocomplete="off" placeholder="City — type to search MX / CN / US, or free text"><div class="ac-list" id="ac_por"></div></div>
@@ -404,7 +418,7 @@
           </div>
         </div>
       </td></tr>
-      <tr class="spot-only"><td class="lbl">Port of Loading (POL)</td><td>
+      <tr class="spot-only" id="row_pol"><td class="lbl">Port of Loading (POL)</td><td>
         <ul class="route-list" id="list_pol"></ul>
         <div class="route-input-row">
           <div class="ac-wrap"><input class="fld ac-port" id="f_pol" autocomplete="off" placeholder="Type port name or code…"><div class="ac-list" id="ac_pol"></div></div>
@@ -412,7 +426,7 @@
         </div>
         <div class="route-hint">Pick from the list (auto-adds) or type freely + Enter. Add several for multi-route.</div>
       </td></tr>
-      <tr class="spot-only"><td class="lbl">Port of Discharge (POD)</td><td>
+      <tr class="spot-only" id="row_pod"><td class="lbl">Port of Discharge (POD)</td><td>
         <ul class="route-list" id="list_pod"></ul>
         <div class="route-input-row">
           <div class="ac-wrap"><input class="fld ac-port" id="f_pod" autocomplete="off" placeholder="Type port name or code…"><div class="ac-list" id="ac_pod"></div></div>
@@ -420,7 +434,10 @@
         </div>
         <div class="route-hint">Pick from the list (auto-adds) or type freely + Enter. Add several for multi-route.</div>
       </td></tr>
-      <tr class="spot-only"><td class="lbl">Place of Delivery</td><td>
+      <tr class="spot-only" id="row_addon" style="display:none;"><td class="lbl"></td><td>
+        <button type="button" class="leg-btn" id="btn_addon">+ On-Carriage (entrega en destino)</button>
+      </td></tr>
+      <tr class="spot-only" id="row_pod2"><td class="lbl">Place of Delivery <button type="button" class="leg-rm ocean-rm" id="rm_on" style="display:none;">quitar</button></td><td>
         <ul class="route-list" id="list_pod2"></ul>
         <div class="route-input-row">
           <div class="ac-wrap"><input class="fld ac-port" id="f_pod2" autocomplete="off" placeholder="City — type to search MX / CN / US, or free text"><div class="ac-list" id="ac_pod2"></div></div>
@@ -435,7 +452,7 @@
           </div>
         </div>
       </td></tr>
-      <tr><td class="lbl">Service scope <span class="req">*</span></td><td class="opts" data-validate="scope">
+      <tr id="row_scope"><td class="lbl">Service scope <span class="req">*</span></td><td class="opts" data-validate="scope">
         <span class="opt" data-group="scope"><span class="box"></span>Port–Port</span>
         <span class="opt" data-group="scope"><span class="box"></span>Door–Port</span>
         <span class="opt" data-group="scope"><span class="box"></span>Port–Door</span>
@@ -550,7 +567,10 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     {group:true,name:'China Base Ports (all regions)',ports:['Shanghai (CNSGH)','Ningbo (CNNBO)','Qingdao (CNQIN)','Shenzhen (CNSNZ)','Guangzhou (CNGGZ)','Xiamen (CNXAM)','Tianjin (CNTNJ)','Dalian (CNDAL)']},
     {group:true,name:'North China Base Ports',ports:['Qingdao (CNQIN)','Tianjin (CNTNJ)','Dalian (CNDAL)']},
     {group:true,name:'East China Base Ports',ports:['Shanghai (CNSGH)','Ningbo (CNNBO)']},
-    {group:true,name:'South & Southeast China Base Ports',ports:['Shenzhen (CNSNZ)','Guangzhou (CNGGZ)','Xiamen (CNXAM)','Hong Kong (HKHKG)']}
+    {group:true,name:'South & Southeast China Base Ports',ports:['Shenzhen (CNSNZ)','Guangzhou (CNGGZ)','Xiamen (CNXAM)','Hong Kong (HKHKG)']},
+    {group:true,name:'Base Ports TPSB LATAM',ports:['Buenaventura (COBUN)','Guayaquil (ECGYE)','Paita (PEPAI)','Callao (PECLL)','Iquique (CLIQQ)','Arica (CLARI)','San Antonio (CLSAI)','Valparaiso (CLVAP)','San Vicente (CLSVE)','Coronel (CLCNL)']},
+    {group:true,name:'Base Ports TASB LATAM',ports:['Santos (BRSSZ)','Paranagua (BRPNG)','Itapoa (BRIOA)','Navegantes (BRNVT)','Itajai (BRITJ)','Rio Grande (BRRIG)','Rio de Janeiro (BRRIO)','Suape (BRSUA)','Pecem (BRPEC)','Salvador (BRSSA)','Buenos Aires (ARBUE)','Montevideo (UYMVD)']},
+    {group:true,name:'Base Ports Caribe',ports:['Cartagena (COCTG)','Barranquilla (COBAQ)','Santa Marta (COSMR)','Puerto Cabello (VEPBL)','La Guaira (VELAG)','Maracaibo (VEMAR)','Guanta (VEGUT)','Puerto Limon (CRLIO)','Moin (CRPMN)','Colon (PAONX)','Cristobal (PACTB)','Manzanillo (PAMIT)','Puerto Cortes (HNPCR)','Santo Tomas de Castilla (GTSTC)','Puerto Barrios (GTPBR)','Big Creek (BZBGK)','Kingston (JMKIN)','Caucedo (DOCAU)','Rio Haina (DOHAI)','San Juan (PRSJU)','Point Lisas (TTPTS)','Port-of-Spain (TTPOS)','Bridgetown (BBBGI)','Willemstad (CWWIL)','Oranjestad (AWORJ)','Freeport (BSFPO)','Fort-de-France (MQFDF)','Pointe-a-Pitre (GPPTP)','Port-au-Prince (HTPAP)','Philipsburg (SXPHI)']}
   ];
   function setupPortAC(inputId, listId, onPick){
     var input=document.getElementById(inputId);
@@ -737,8 +757,10 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var cust = v('f_customer');
     var origin, dest;
     if(isMulti()){
-      origin=tokenFromArray(ROUTE_LINES.map(function(l){return l.pol;}).filter(Boolean));
-      dest  =tokenFromArray(ROUTE_LINES.reduce(function(a,l){return a.concat(l.pods);},[]).filter(Boolean));
+      var allPols=ROUTE_LINES.reduce(function(a,l){return a.concat((l.pols||[]).map(function(p){return p.port;}));},[]).filter(Boolean);
+      var allPods=ROUTE_LINES.reduce(function(a,l){return a.concat((l.pods||[]).map(function(p){return p.port;}));},[]).filter(Boolean);
+      origin=tokenFromArray(allPols);
+      dest  =tokenFromArray(allPods);
     }else{
       origin=endpointToken('pol');
       dest  =endpointToken('pod');
@@ -816,7 +838,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     }
   });
   // Initial render after page load.
-  setTimeout(function(){updateSubject();updateLegMode();renderEquip();updateRateTypeUI();updateRouteSummary();},50);
+  setTimeout(function(){applyOceanRateLock();updateSubject();updateLegMode();renderEquip();updateRateTypeUI();updateRouteSummary();},50);
 
   // ===== Leg mode (pre-/on-carriage) visibility =====
   // Show "Pre-carriage mode" under Place of Receipt and "On-carriage mode"
@@ -855,6 +877,53 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       }
     });
   }
+  // ===== Maritime routing layout (Ocean) =====
+  // In Ocean mode the spot routing collapses to POL -> POD as the base, with
+  // Pre-Carriage (origin) and On-Carriage (destination) revealed on demand via
+  // buttons, and the global Service scope hidden (scope becomes per-route).
+  var spotShowPre=false, spotShowOn=false;
+  function updateOceanRouting(){
+    var ocean=(group('tmode')==='Ocean');
+    var scopeRow=document.getElementById('row_scope');
+    if(scopeRow)scopeRow.style.display=ocean?'none':'';
+    // Spot-row layout only matters when not in Multiroute (those rows are hidden then).
+    var por=document.getElementById('row_por'),pod2=document.getElementById('row_pod2'),
+        addpre=document.getElementById('row_addpre'),addon=document.getElementById('row_addon'),
+        rmPre=document.getElementById('rm_pre'),rmOn=document.getElementById('rm_on');
+    var spot=!isMulti();
+    // Auto-expand if the place already has content (e.g. after switching modes).
+    if(legHasContent('por'))spotShowPre=true;
+    if(legHasContent('pod2'))spotShowOn=true;
+    if(ocean && spot){
+      if(por)por.style.display=spotShowPre?'':'none';
+      if(pod2)pod2.style.display=spotShowOn?'':'none';
+      if(addpre)addpre.style.display=spotShowPre?'none':'';
+      if(addon)addon.style.display=spotShowOn?'none':'';
+      if(rmPre)rmPre.style.display='';
+      if(rmOn)rmOn.style.display='';
+    }else{
+      // Non-Ocean spot: show the four routing rows, no buttons, no remove links.
+      if(addpre)addpre.style.display='none';
+      if(addon)addon.style.display='none';
+      if(rmPre)rmPre.style.display='none';
+      if(rmOn)rmOn.style.display='none';
+      // por/pod2 visibility is governed by the .spot-only rule in updateRateTypeUI.
+      if(spot){if(por)por.style.display='';if(pod2)pod2.style.display='';}
+    }
+  }
+  function collapseSpotLeg(which){
+    if(which==='pre'){
+      spotShowPre=false; ROUTES.por=[]; renderRoutes('por');
+      var f=document.getElementById('f_por'); if(f)f.value='';
+      document.querySelectorAll('.opt[data-group="precar"]').forEach(function(o){o.classList.remove('on');var b=o.querySelector('.box');if(b)b.textContent='';});
+    }else{
+      spotShowOn=false; ROUTES.pod2=[]; renderRoutes('pod2');
+      var g=document.getElementById('f_pod2'); if(g)g.value='';
+      document.querySelectorAll('.opt[data-group="oncar"]').forEach(function(o){o.classList.remove('on');var b=o.querySelector('.box');if(b)b.textContent='';});
+    }
+    updateLegMode();updateOceanRouting();updateSubject();updateRouteSummary();
+  }
+
   // Returns array of missing leg-mode labels (used to warn before copy/print).
   function missingLegModes(){
     var missing=[];
@@ -888,6 +957,46 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function multiline(s){return esc(s).replace(/\n/g,'<br>');}
 
+  // Equipment selected in the spot chips, as an array (group() returns a string).
+  function groupArr(grp){
+    var picked=[];
+    document.querySelectorAll('.opt[data-group="'+grp+'"].on').forEach(function(o){
+      picked.push(o.textContent.replace('✓','').trim());
+    });
+    return picked;
+  }
+
+  // Per-route equipment selection for the summary tables. Keyed by a stable row
+  // signature (the routing fields) -> { equipLabel: true/false }. Lets Pricing
+  // tick/untick which container sizes to quote per route, in spot and multiroute.
+  var EQUIP_CHECKS={};
+  function rowSig(parts){return encodeURIComponent(parts.join('\u0001'));}
+  function equipChecked(sig,equip,defOn){
+    var m=EQUIP_CHECKS[sig];
+    if(m&&Object.prototype.hasOwnProperty.call(m,equip))return m[equip];
+    return defOn;
+  }
+  function toggleEquipCheck(sig,equip,cur){
+    EQUIP_CHECKS[sig]=EQUIP_CHECKS[sig]||{};
+    EQUIP_CHECKS[sig][equip]=!cur;
+    updateSubject();updateRouteSummary();
+  }
+  // Equipment header cell + body cell (interactive on-screen, static for email/image).
+  function eqHeadCell(label){
+    return '<td style="padding:6px 8px;text-align:center;color:#9B1B25;font-weight:bold;border-bottom:1px solid #DADADA;border-left:1px solid #EEEEEE;white-space:nowrap;">'+esc(label)+'</td>';
+  }
+  function eqBodyCell(sig,equip,on,interactive){
+    var base='padding:6px 8px;text-align:center;border-bottom:1px solid #EEEEEE;border-left:1px solid #EEEEEE;';
+    if(interactive){
+      var box='display:inline-block;width:17px;height:17px;line-height:17px;border-radius:3px;font-size:12px;'
+        +(on?'background:#1A7F37;color:#fff;border:1px solid #1A7F37;':'background:#fff;color:transparent;border:1px solid #C9CDD2;');
+      return '<td class="eq-cell" data-sig="'+sig+'" data-eq="'+encodeURIComponent(equip)+'" data-cur="'+(on?1:0)+'" '
+        +'style="'+base+'cursor:pointer;"><span style="'+box+'">'+(on?'✓':'')+'</span></td>';
+    }
+    return '<td style="'+base+'font-weight:bold;color:#1A7F37;">'+(on?'✓':'')+'</td>';
+  }
+
+
   // Render a route list as numbered lines for the email/image output.
   // Single value -> plain text; multiple -> "1. … / 2. …" stacked with <br>.
   function routeHTML(key){
@@ -910,6 +1019,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     clearMissingMarks();
     document.querySelectorAll('.leg-mode.missing').forEach(function(b){b.classList.remove('missing');});
     ROUTE_LINES=[];
+    EQUIP_CHECKS={};
     document.querySelectorAll('.opt[data-group="ratetype"]').forEach(function(o){
       var isSpot=o.textContent.replace('✓','').trim()==='Spot rate';
       o.classList.toggle('on',isSpot);o.querySelector('.box').textContent=isSpot?'✓':'';
@@ -956,9 +1066,10 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       row('Consignee', multiline(v('f_consignee')));
     close();
     sec('ROUTING');open();
+      var ocean=(group('tmode')==='Ocean');
       row('Rate type', group('ratetype'));
       if(isMulti()){
-        row('Service scope', group('scope'));
+        if(!ocean)row('Service scope', group('scope'));
         row('Incoterm', esc(v('f_inco')));
       }else{
         row('Place of Receipt', routeHTML('por'));
@@ -968,7 +1079,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
         row('Port of Discharge (POD)', routeHTML('pod'));
         row('Place of Delivery', routeHTML('pod2'));
         if(group('oncar'))row('&nbsp;&nbsp;On-carriage mode', group('oncar'));
-        row('Service scope', group('scope'));
+        if(!ocean)row('Service scope', group('scope'));
         row('Incoterm', esc(v('f_inco')));
       }
     close();
@@ -1021,6 +1132,8 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
 
     // Check the five base required fields.
     REQUIRED_FIELDS.forEach(function(f){
+      // Service scope is hidden in Ocean (per-route), so it isn't required there.
+      if(f.name==='scope' && group('tmode')==='Ocean')return;
       var empty=false;
       if(f.kind==='group')empty=!group(f.name);
       else                empty=!v(f.name);
@@ -1220,10 +1333,11 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     for(var i=0;i<n;i++)rows.push([pick(por,i),pick(pol,i),pick(pod,i),pick(pod2,i)]);
     return rows;
   }
-  function routeTableHTML(){
+  function routeTableHTML(interactive){
     var rows=routeRows();
     if(!rows)return '';
     var pre=group('precar'),on=group('oncar');
+    var equipCols=groupArr('equip'); // selected container sizes = equipment columns
     var cols=[{h:'#'},{h:'Place of Receipt',idx:0}];
     if(pre)cols.push({h:'Pre-carriage',leg:pre});
     cols.push({h:'POL',idx:1},{h:'POD',idx:2});
@@ -1232,6 +1346,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var thCell='padding:6px 8px;text-align:left;color:#9B1B25;font-weight:bold;border-bottom:1px solid #DADADA;white-space:nowrap;';
     var tdCell='padding:6px 8px;color:#1A1A1A;border-bottom:1px solid #EEEEEE;vertical-align:top;';
     var th='';cols.forEach(function(c){th+='<td style="'+thCell+'">'+c.h+'</td>';});
+    equipCols.forEach(function(e){th+=eqHeadCell(e);});
     var body='';
     rows.forEach(function(r,ri){
       var tds='';
@@ -1242,27 +1357,72 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
         else val=r[c.idx];
         tds+='<td style="'+tdCell+'">'+(esc(val)||'&mdash;')+'</td>';
       });
+      var sig=rowSig([r[0],pre,r[1],r[2],on,r[3]]);
+      equipCols.forEach(function(e){
+        var onv=equipChecked(sig,e,true); // spot default: every selected size applies to every route
+        tds+=eqBodyCell(sig,e,onv,interactive);
+      });
       body+='<tr>'+tds+'</tr>';
     });
-    return '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:12px;">'
+    return '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:12px;">'
       +'<tr style="background:#F5F5F5;">'+th+'</tr>'+body+'</table>';
+  }
+  // Ocean is Multiroute-only (covers all scenarios; avoids confusing sales with Spot).
+  function applyOceanRateLock(){
+    var ocean=(group('tmode')==='Ocean');
+    var spotChip=document.getElementById('rt_spot');
+    if(spotChip)spotChip.style.display=ocean?'none':'';
+    if(ocean && !isMulti()){
+      document.querySelectorAll('.opt[data-group="ratetype"]').forEach(function(o){
+        var m=o.textContent.replace('✓','').trim()==='Multiroute';
+        o.classList.toggle('on',m);o.querySelector('.box').textContent=m?'✓':'';
+      });
+    }
+  }
+  // Copy the current route table to the clipboard so Pricing can paste it into Excel
+  // (rich HTML table -> lands in cells; plain TSV fallback for editors that need it).
+  function copyTableForExcel(){
+    var html=isMulti()?routeLinesTableHTML(false):routeTableHTML(false);
+    if(!html){alert('Aún no hay tabla de rutas para copiar. Agrega POL/POD primero.');return;}
+    var tmp=document.createElement('div');
+    tmp.style.cssText='position:fixed;left:-9999px;top:0;';
+    tmp.innerHTML=html;document.body.appendChild(tmp);
+    var table=tmp.querySelector('table');
+    var ok=false;
+    try{
+      var range=document.createRange();range.selectNode(table);
+      var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+      ok=document.execCommand('copy');sel.removeAllRanges();
+    }catch(e){ok=false;}
+    document.body.removeChild(tmp);
+    var btn=document.getElementById('btn_xls');
+    if(btn){var t=btn.textContent;btn.textContent=ok?'¡Copiado! Pega en Excel':'No se pudo copiar';setTimeout(function(){btn.textContent=t;},1800);}
   }
   function updateRouteSummary(){
     var c=document.getElementById('routeSummary');
     if(!c)return;
     var multi=isMulti();
-    var html=multi?routeLinesTableHTML():routeTableHTML();
+    var html=multi?routeLinesTableHTML(true):routeTableHTML(true);
     if(!html){c.style.display='none';c.innerHTML='';return;}
     c.style.display='';
     var label=multi?'ROUTE LINES — MULTIROUTE':'ROUTE SUMMARY — MULTI-ROUTE';
-    c.innerHTML='<div style="color:#9B1B25;font-size:11px;font-weight:bold;letter-spacing:1px;border-bottom:1px solid #EEEEEE;padding-bottom:5px;margin:6px 0 8px;font-family:Arial,Helvetica,sans-serif;">'+label+'</div><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'+html+'</div>';
+    c.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #EEEEEE;padding-bottom:5px;margin:6px 0 8px;"><span style="color:#9B1B25;font-size:11px;font-weight:bold;letter-spacing:1px;font-family:Arial,Helvetica,sans-serif;">'+label+'</span><button type="button" id="btn_xls" class="leg-btn" onclick="copyTableForExcel()" style="font-size:11px;padding:5px 10px;">Copiar para Excel</button></div><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'+html+'</div>';
   }
 
   // Keep equipment options and the route summary in sync with the form.
   document.addEventListener('click',function(e){
+    if(e.target.id==='btn_addpre'){spotShowPre=true;updateOceanRouting();var f=document.getElementById('f_por');if(f)f.focus();return;}
+    if(e.target.id==='btn_addon'){spotShowOn=true;updateOceanRouting();var g=document.getElementById('f_pod2');if(g)g.focus();return;}
+    if(e.target.id==='rm_pre'){collapseSpotLeg('pre');return;}
+    if(e.target.id==='rm_on'){collapseSpotLeg('on');return;}
+    var cell=e.target.closest('.eq-cell');
+    if(cell){
+      toggleEquipCheck(cell.getAttribute('data-sig'),decodeURIComponent(cell.getAttribute('data-eq')),cell.getAttribute('data-cur')==='1');
+      return;
+    }
     if(e.target.closest('.opt[data-group="ratetype"]')){setTimeout(updateRateTypeUI,0);}
     if(e.target.closest('.opt[data-group="scope"]')){setTimeout(function(){if(isMulti())renderMRLines();updateRouteSummary();},0);}
-    if(e.target.closest('.opt[data-group="tmode"]')){setTimeout(function(){renderEquip();if(isMulti()){ROUTE_LINES.forEach(function(l){l.equip=[];});renderMRLines();}updateRouteSummary();},0);}
+    if(e.target.closest('.opt[data-group="tmode"]')){setTimeout(function(){applyOceanRateLock();renderEquip();updateOceanRouting();if(isMulti()){ROUTE_LINES.forEach(function(l){l.equip=[];});}updateRateTypeUI();updateRouteSummary();},0);}
     if(e.target.closest('.opt')||e.target.closest('.btn-add')||e.target.closest('.rm')){setTimeout(updateRouteSummary,0);}
   });
   document.addEventListener('input',function(e){
@@ -1384,82 +1544,106 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       dest:(s===''||s==='Port–Door'||s==='Door–Door')
     };
   }
+  // Each line holds POL legs and POD legs. A POL leg may carry an optional
+  // pre-carriage (origin city + mode); a POD leg an optional on-carriage
+  // (destination city + mode). The summary cross-joins POLs x PODs per line.
   function newLine(prev){
-    return {por:'',precar:'',pol:'',pods:[],oncar:'',pod2:'',equip:prev?prev.equip.slice():[]};
+    return {pols:[],pods:[],equip:prev?prev.equip.slice():[]};
   }
+  function newPol(port){return {port:port||'',por:'',precar:'',showPre:false};}
+  function newPod(port){return {port:port||'',pod2:'',oncar:'',showOn:false};}
   function addMRLine(){
     ROUTE_LINES.push(newLine(ROUTE_LINES[ROUTE_LINES.length-1]));
     renderMRLines();updateSubject();updateRouteSummary();
   }
   function removeMRLine(i){ROUTE_LINES.splice(i,1);renderMRLines();updateSubject();updateRouteSummary();}
 
-  function mrField(label,inner){return '<div class="mr-field"><div class="mr-lbl">'+label+'</div>'+inner+'</div>';}
-  function mrModeField(label,grp,i){
-    var s='<div class="mr-modes" id="mr_'+grp+'_'+i+'">';
-    ['All Truck','Rail Combined'].forEach(function(v){s+='<span class="opt mr-mode" data-val="'+v+'"><span class="box"></span>'+v+'</span>';});
-    return mrField(label,s+'</div>');
-  }
+  function mrField(label,inner,lblClass){return '<div class="mr-field"><div class="mr-lbl'+(lblClass?' '+lblClass:'')+'">'+label+'</div>'+inner+'</div>';}
   function mrSetVal(id,val){var e=document.getElementById(id);if(e)e.value=val||'';}
 
-  // Show/hide a line's pre/on-carriage mode field based on whether its place is filled,
-  // clearing the mode when hidden.
-  function toggleLineMode(i,which,line){
-    var w=document.getElementById(which==='pre'?'mr_prewrap_'+i:'mr_onwrap_'+i);
-    if(!w)return;
-    var hasPlace=which==='pre'?!!(line.por&&line.por.trim()):!!(line.pod2&&line.pod2.trim());
-    if(hasPlace){w.style.display='';}
-    else{
-      w.style.display='none';
-      var grp=which==='pre'?'precar':'oncar';
-      line[grp]='';
-      var mw=document.getElementById('mr_'+grp+'_'+i);
-      if(mw)mw.querySelectorAll('.mr-mode').forEach(function(x){x.classList.remove('on');x.querySelector('.box').textContent='';});
-    }
+  // Add / remove a POL or POD leg (which='pol'|'pod'). Group picks call this once per member.
+  function addLineLeg(i,which,val){
+    val=(val||'').trim();if(!val)return;
+    var line=ROUTE_LINES[i];
+    if(which==='pol')line.pols.push(newPol(val));else line.pods.push(newPod(val));
+    renderMRLines();updateSubject();updateRouteSummary();
   }
-  function renderLinePods(i){
-    var ul=document.getElementById('mr_podlist_'+i);if(!ul)return;
-    ul.innerHTML='';
-    ROUTE_LINES[i].pods.forEach(function(val,j){
-      var li=document.createElement('li');li.className='route-chip';
-      li.innerHTML='<span class="seq">'+(j+1)+'.</span><span class="txt"></span><button type="button" class="rm" title="Remove">×</button>';
-      li.querySelector('.txt').textContent=val;
-      li.querySelector('.rm').addEventListener('click',function(){removeLinePod(i,j);});
-      ul.appendChild(li);
+  function removeLineLeg(i,which,j){
+    (which==='pol'?ROUTE_LINES[i].pols:ROUTE_LINES[i].pods).splice(j,1);
+    renderMRLines();updateSubject();updateRouteSummary();
+  }
+  // Two mode chips (All Truck / Rail Combined) for a specific leg.
+  function mrModeChips(grp,i,j){
+    var s='<div class="mr-modes" id="mr_'+grp+'_'+i+'_'+j+'" style="margin-top:6px;">';
+    ['All Truck','Rail Combined'].forEach(function(v){s+='<span class="opt mr-mode" data-val="'+v+'"><span class="box"></span>'+v+'</span>';});
+    return s+'</div>';
+  }
+  // One POL/POD block: port + remove, plus an opt-in carriage section (Ocean only).
+  function legBlockHTML(i,which,leg,j,ocean){
+    var h='<div class="mr-leg"><div class="mr-leg-top"><span class="mr-leg-port">'+(j+1)+'. '+(esc(leg.port)||'&mdash;')+'</span>'
+      +'<button type="button" class="rm" data-legrm="'+which+'" data-i="'+i+'" data-j="'+j+'" title="Remove">×</button></div>';
+    if(ocean && which==='pol'){
+      if(leg.showPre){
+        h+='<div class="mr-leg-sub"><div class="mr-lbl">Pre-Carriage — Origin (Place of Receipt) <button type="button" class="leg-rm" data-legcarrm="pol" data-i="'+i+'" data-j="'+j+'">quitar</button></div>'
+          +'<div class="ac-wrap"><input class="fld mr-inp" id="mr_por_'+i+'_'+j+'" autocomplete="off" placeholder="City — MX / CN / US"><div class="ac-list" id="mr_acpor_'+i+'_'+j+'"></div></div>'
+          +mrModeChips('precar',i,j)+'</div>';
+      }else{
+        h+='<button type="button" class="leg-btn" data-legcar="pol" data-i="'+i+'" data-j="'+j+'">+ Pre-Carriage</button>';
+      }
+    }
+    if(ocean && which==='pod'){
+      if(leg.showOn){
+        h+='<div class="mr-leg-sub"><div class="mr-lbl">On-Carriage — Destination (Place of Delivery) <button type="button" class="leg-rm" data-legcarrm="pod" data-i="'+i+'" data-j="'+j+'">quitar</button></div>'
+          +'<div class="ac-wrap"><input class="fld mr-inp" id="mr_pod2_'+i+'_'+j+'" autocomplete="off" placeholder="City — MX / CN / US"><div class="ac-list" id="mr_acpod2_'+i+'_'+j+'"></div></div>'
+          +mrModeChips('oncar',i,j)+'</div>';
+      }else{
+        h+='<button type="button" class="leg-btn" data-legcar="pod" data-i="'+i+'" data-j="'+j+'">+ On-Carriage</button>';
+      }
+    }
+    return h+'</div>';
+  }
+  function wireModeChips(grp,i,j,leg){
+    var w=document.getElementById('mr_'+grp+'_'+i+'_'+j);if(!w)return;
+    var cur=(grp==='precar')?leg.precar:leg.oncar;
+    w.querySelectorAll('.mr-mode').forEach(function(sp){
+      var val=sp.getAttribute('data-val');
+      if(cur===val){sp.classList.add('on');sp.querySelector('.box').textContent='✓';}
+      sp.addEventListener('click',function(){
+        var wasOn=sp.classList.contains('on');
+        w.querySelectorAll('.mr-mode').forEach(function(x){x.classList.remove('on');x.querySelector('.box').textContent='';});
+        var nv='';
+        if(!wasOn){sp.classList.add('on');sp.querySelector('.box').textContent='✓';nv=val;}
+        if(grp==='precar')leg.precar=nv;else leg.oncar=nv;
+        updateSubject();updateRouteSummary();
+      });
     });
   }
-  function addLinePod(i,val){
-    val=(val||'').trim();if(!val)return;
-    ROUTE_LINES[i].pods.push(val);renderLinePods(i);
-    var inp=document.getElementById('mr_pod_'+i);if(inp)inp.value='';
-    updateSubject();updateRouteSummary();
-  }
-  function removeLinePod(i,j){ROUTE_LINES[i].pods.splice(j,1);renderLinePods(i);updateSubject();updateRouteSummary();}
 
   function renderMRLines(){
     var box=document.getElementById('mrLines');
     if(!box)return;
     if(!ROUTE_LINES.length)ROUTE_LINES.push(newLine(null));
-    var fl=lineScopeFlags();
     var mode=group('tmode');
+    var ocean=(mode==='Ocean');
     var equipSet=EQUIP_SETS[mode]||[];
     box.innerHTML='';
     ROUTE_LINES.forEach(function(line,i){
+      line.pols=line.pols||[];line.pods=line.pods||[];
       var card=document.createElement('div');card.className='mr-card';
       var h='<div class="mr-head"><span class="mr-n">Línea '+(i+1)+'</span><button type="button" class="mr-rm" data-i="'+i+'">Quitar</button></div><div class="mr-fields">';
-      if(fl.origin){
-        h+=mrField('Origin (Place of Receipt)','<div class="ac-wrap"><input class="fld mr-inp" id="mr_por_'+i+'" autocomplete="off" placeholder="City — MX / CN / US"><div class="ac-list" id="mr_acpor_'+i+'"></div></div>');
-        h+='<div id="mr_prewrap_'+i+'" style="display:none;">'+mrModeField('Pre-carriage mode','precar',i)+'</div>';
-      }
-      h+=mrField('Port of Loading (POL)','<div class="ac-wrap"><input class="fld mr-inp ac-port" id="mr_pol_'+i+'" autocomplete="off" placeholder="Port name or code"><div class="ac-list" id="mr_acpol_'+i+'"></div></div>');
-      h+=mrField('Port(s) of Discharge (POD)',
-        '<ul class="route-list" id="mr_podlist_'+i+'"></ul>'
-        +'<div class="route-input-row"><div class="ac-wrap"><input class="fld mr-inp ac-port" id="mr_pod_'+i+'" autocomplete="off" placeholder="Port name or code — add several"><div class="ac-list" id="mr_acpod_'+i+'"></div></div>'
-        +'<button type="button" class="btn-add" data-podadd="'+i+'" title="Add">+</button></div>'
-        +'<div class="route-hint">Pick or type + Enter. Add several discharge ports for this origin.</div>');
-      if(fl.dest){
-        h+=mrField('Destination (Place of Delivery)','<div class="ac-wrap"><input class="fld mr-inp" id="mr_pod2_'+i+'" autocomplete="off" placeholder="City — MX / CN / US"><div class="ac-list" id="mr_acpod2_'+i+'"></div></div>');
-        h+='<div id="mr_onwrap_'+i+'" style="display:none;">'+mrModeField('On-carriage mode','oncar',i)+'</div>';
-      }
+      // POL list (each port its own block, optional pre-carriage in Ocean)
+      var pol='';
+      line.pols.forEach(function(leg,j){pol+=legBlockHTML(i,'pol',leg,j,ocean);});
+      pol+='<div class="route-input-row"><div class="ac-wrap"><input class="fld mr-inp ac-port" id="mr_pol_'+i+'" autocomplete="off" placeholder="Port name or code — add several"><div class="ac-list" id="mr_acpol_'+i+'"></div></div><button type="button" class="btn-add" data-poladd="'+i+'" title="Add">+</button></div>'
+        +'<div class="route-hint">Pick or type + Enter. Add several loading ports (or a base-ports set).</div>';
+      h+=mrField('Port(s) of Loading (POL)',pol,'mr-lbl-port');
+      // POD list (each port its own block, optional on-carriage in Ocean)
+      var pod='';
+      line.pods.forEach(function(leg,j){pod+=legBlockHTML(i,'pod',leg,j,ocean);});
+      pod+='<div class="route-input-row"><div class="ac-wrap"><input class="fld mr-inp ac-port" id="mr_pod_'+i+'" autocomplete="off" placeholder="Port name or code — add several"><div class="ac-list" id="mr_acpod_'+i+'"></div></div><button type="button" class="btn-add" data-podadd="'+i+'" title="Add">+</button></div>'
+        +'<div class="route-hint">Add several discharge ports. Repeat the same port to quote different destinations.</div>';
+      h+=mrField('Port(s) of Discharge (POD)',pod,'mr-lbl-port');
+      // Equipment
       var eq='<div class="mr-equip" id="mr_equip_'+i+'">';
       if(!mode)eq+='<span class="mr-hint">Selecciona primero el modo de transporte.</span>';
       else if(mode==='Air')eq+='<span class="mr-hint">Aéreo — describe piezas / peso / dimensiones abajo.</span>';
@@ -1467,19 +1651,28 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       h+=mrField('Equipment type',eq+'</div>')+'</div>';
       card.innerHTML=h;box.appendChild(card);
     });
+    // Wiring
     ROUTE_LINES.forEach(function(line,i){
-      [['mr_por_'+i,'por','mr_acpor_'+i,'city'],['mr_pol_'+i,'pol','mr_acpol_'+i,'port'],
-       ['mr_pod2_'+i,'pod2','mr_acpod2_'+i,'city']].forEach(function(c){
-        var inp=document.getElementById(c[0]);if(!inp)return;
-        if(c[3]==='port')setupPortAC(c[0],c[2],null);else setupCityAC(c[0],c[2],null);
-        mrSetVal(c[0],line[c[1]]);
-        function sync(){line[c[1]]=inp.value;if(c[1]==='por')toggleLineMode(i,'pre',line);if(c[1]==='pod2')toggleLineMode(i,'on',line);updateSubject();updateRouteSummary();}
-        inp.addEventListener('input',sync);
-        inp.addEventListener('blur',sync);
-      });
+      var polInp=document.getElementById('mr_pol_'+i);
+      if(polInp)setupPortAC('mr_pol_'+i,'mr_acpol_'+i,function(val){addLineLeg(i,'pol',val);});
       var podInp=document.getElementById('mr_pod_'+i);
-      if(podInp)setupPortAC('mr_pod_'+i,'mr_acpod_'+i,function(val){addLinePod(i,val);});
-      renderLinePods(i);
+      if(podInp)setupPortAC('mr_pod_'+i,'mr_acpod_'+i,function(val){addLineLeg(i,'pod',val);});
+      line.pols.forEach(function(leg,j){
+        if(!leg.showPre)return;
+        var id='mr_por_'+i+'_'+j,inp=document.getElementById(id);if(!inp)return;
+        setupCityAC(id,'mr_acpor_'+i+'_'+j,null);mrSetVal(id,leg.por);
+        function s(){leg.por=inp.value;updateSubject();updateRouteSummary();}
+        inp.addEventListener('input',s);inp.addEventListener('blur',s);
+        wireModeChips('precar',i,j,leg);
+      });
+      line.pods.forEach(function(leg,j){
+        if(!leg.showOn)return;
+        var id='mr_pod2_'+i+'_'+j,inp=document.getElementById(id);if(!inp)return;
+        setupCityAC(id,'mr_acpod2_'+i+'_'+j,null);mrSetVal(id,leg.pod2);
+        function s(){leg.pod2=inp.value;updateSubject();updateRouteSummary();}
+        inp.addEventListener('input',s);inp.addEventListener('blur',s);
+        wireModeChips('oncar',i,j,leg);
+      });
       var eqWrap=document.getElementById('mr_equip_'+i);
       if(eqWrap)eqWrap.querySelectorAll('.mr-eq').forEach(function(sp){
         var lab=sp.getAttribute('data-eq');
@@ -1491,31 +1684,22 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
           updateSubject();updateRouteSummary();
         });
       });
-      ['precar','oncar'].forEach(function(grp){
-        var w=document.getElementById('mr_'+grp+'_'+i);if(!w)return;
-        w.querySelectorAll('.mr-mode').forEach(function(sp){
-          var val=sp.getAttribute('data-val');
-          if(line[grp]===val){sp.classList.add('on');sp.querySelector('.box').textContent='✓';}
-          sp.addEventListener('click',function(){
-            var wasOn=sp.classList.contains('on');
-            w.querySelectorAll('.mr-mode').forEach(function(x){x.classList.remove('on');x.querySelector('.box').textContent='';});
-            if(wasOn){line[grp]='';}
-            else{sp.classList.add('on');sp.querySelector('.box').textContent='✓';line[grp]=val;}
-            updateSubject();updateRouteSummary();
-          });
-        });
-      });
-      toggleLineMode(i,'pre',line);
-      toggleLineMode(i,'on',line);
     });
-    box.querySelectorAll('.btn-add[data-podadd]').forEach(function(b){
-      b.addEventListener('click',function(){
-        var i=parseInt(b.getAttribute('data-podadd'),10);
-        var inp=document.getElementById('mr_pod_'+i);
-        if(inp){addLinePod(i,inp.value);inp.focus();}
-      });
-    });
-    box.querySelectorAll('.mr-rm').forEach(function(b){b.addEventListener('click',function(){removeMRLine(parseInt(b.getAttribute('data-i'),10));});});
+    box.querySelectorAll('.btn-add[data-poladd]').forEach(function(b){b.addEventListener('click',function(){var i=+b.getAttribute('data-poladd');var inp=document.getElementById('mr_pol_'+i);if(inp){addLineLeg(i,'pol',inp.value);inp.focus();}});});
+    box.querySelectorAll('.btn-add[data-podadd]').forEach(function(b){b.addEventListener('click',function(){var i=+b.getAttribute('data-podadd');var inp=document.getElementById('mr_pod_'+i);if(inp){addLineLeg(i,'pod',inp.value);inp.focus();}});});
+    box.querySelectorAll('[data-legrm]').forEach(function(b){b.addEventListener('click',function(){removeLineLeg(+b.getAttribute('data-i'),b.getAttribute('data-legrm'),+b.getAttribute('data-j'));});});
+    box.querySelectorAll('[data-legcar]').forEach(function(b){b.addEventListener('click',function(){
+      var i=+b.getAttribute('data-i'),j=+b.getAttribute('data-j');
+      if(b.getAttribute('data-legcar')==='pol')ROUTE_LINES[i].pols[j].showPre=true;else ROUTE_LINES[i].pods[j].showOn=true;
+      renderMRLines();
+    });});
+    box.querySelectorAll('[data-legcarrm]').forEach(function(b){b.addEventListener('click',function(){
+      var i=+b.getAttribute('data-i'),j=+b.getAttribute('data-j');
+      if(b.getAttribute('data-legcarrm')==='pol'){var p=ROUTE_LINES[i].pols[j];p.showPre=false;p.por='';p.precar='';}
+      else{var q=ROUTE_LINES[i].pods[j];q.showOn=false;q.pod2='';q.oncar='';}
+      renderMRLines();updateSubject();updateRouteSummary();
+    });});
+    box.querySelectorAll('.mr-rm').forEach(function(b){b.addEventListener('click',function(){removeMRLine(+b.getAttribute('data-i'));});});
   }
 
   // Shared "array of endpoints -> compact token" used by subject (spot and multi).
@@ -1532,51 +1716,54 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
   // Per-line table (Outlook-safe inline styles). One column per distinct equipment
   // type, with a ✓ where that equipment must be quoted for the route — so Pricing
   // can read it at a glance.
-  function routeLinesTableHTML(){
+  function routeLinesTableHTML(interactive){
     if(!isMulti())return '';
-    var fl=lineScopeFlags();
-    var lines=ROUTE_LINES.filter(function(l){return l.por||l.pol||l.pods.length||l.pod2||l.equip.length;});
+    var lines=ROUTE_LINES.filter(function(l){return (l.pols&&l.pols.length)||(l.pods&&l.pods.length)||l.equip.length;});
     if(!lines.length)return '';
-    // Distinct equipment used across the lines, in the mode's natural order.
+    // Distinct equipment across lines, in the mode's natural order.
     var equipCols=[];
     (EQUIP_SETS[group('tmode')]||[]).forEach(function(e){if(lines.some(function(l){return l.equip.indexOf(e)>=0;}))equipCols.push(e);});
     lines.forEach(function(l){l.equip.forEach(function(e){if(equipCols.indexOf(e)<0)equipCols.push(e);});});
-    // Effective leg modes apply only when the matching place is filled.
-    function preOf(l){return l.por?l.precar:'';}
-    function onOf(l){return l.pod2?l.oncar:'';}
-    var showPre=fl.origin && lines.some(function(l){return preOf(l);});
-    var showOn =fl.dest   && lines.some(function(l){return onOf(l);});
-    // One row per POD (or a single row if the line has no POD yet).
+    // Build rows: per line, cross-join POL legs x POD legs.
     var rows=[];
-    lines.forEach(function(l){(l.pods.length?l.pods:['']).forEach(function(pd){rows.push({l:l,pod:pd});});});
+    lines.forEach(function(l){
+      var pols=(l.pols&&l.pols.length)?l.pols:[newPol('')];
+      var pods=(l.pods&&l.pods.length)?l.pods:[newPod('')];
+      pols.forEach(function(pl){pods.forEach(function(pd){
+        rows.push({l:l,
+          por:pl.showPre?pl.por:'', precar:pl.showPre?pl.precar:'', pol:pl.port,
+          pod:pd.port, oncar:pd.showOn?pd.oncar:'', pod2:pd.showOn?pd.pod2:''});
+      });});
+    });
+    var showOrigin=rows.some(function(r){return r.por;});
+    var showPre   =rows.some(function(r){return r.precar;});
+    var showOn    =rows.some(function(r){return r.oncar;});
+    var showDest  =rows.some(function(r){return r.pod2;});
 
     var rCols=[{h:'#'}];
-    if(fl.origin)rCols.push({h:'Origin',k:'por'});
-    if(showPre)rCols.push({h:'Pre-carriage',k:'pre'});
+    if(showOrigin)rCols.push({h:'Origin',k:'por'});
+    if(showPre)rCols.push({h:'Pre-carriage',k:'precar'});
     rCols.push({h:'POL',k:'pol'},{h:'POD',k:'pod'});
-    if(showOn)rCols.push({h:'On-carriage',k:'on'});
-    if(fl.dest)rCols.push({h:'Destination',k:'pod2'});
+    if(showOn)rCols.push({h:'On-carriage',k:'oncar'});
+    if(showDest)rCols.push({h:'Destination',k:'pod2'});
 
     var thC='padding:6px 8px;text-align:left;color:#9B1B25;font-weight:bold;border-bottom:1px solid #DADADA;white-space:nowrap;';
-    var thE='padding:6px 8px;text-align:center;color:#9B1B25;font-weight:bold;border-bottom:1px solid #DADADA;border-left:1px solid #EEEEEE;white-space:nowrap;';
     var tdC='padding:6px 8px;color:#1A1A1A;border-bottom:1px solid #EEEEEE;vertical-align:top;';
-    var tdE='padding:6px 8px;text-align:center;border-bottom:1px solid #EEEEEE;border-left:1px solid #EEEEEE;font-weight:bold;color:#1A7F37;';
     var th='';
     rCols.forEach(function(c){th+='<td style="'+thC+'">'+c.h+'</td>';});
-    equipCols.forEach(function(e){th+='<td style="'+thE+'">'+esc(e)+'</td>';});
+    equipCols.forEach(function(e){th+=eqHeadCell(e);});
     var body='';
     rows.forEach(function(r,ri){
-      var l=r.l,tds='';
+      var tds='';
       rCols.forEach(function(c){
-        var val;
-        if(c.h==='#')val=String(ri+1);
-        else if(c.k==='pod')val=r.pod;
-        else if(c.k==='pre')val=preOf(l);
-        else if(c.k==='on')val=onOf(l);
-        else val=l[c.k];
+        var val=(c.h==='#')?String(ri+1):r[c.k];
         tds+='<td style="'+tdC+'">'+(esc(val)||'&mdash;')+'</td>';
       });
-      equipCols.forEach(function(e){tds+='<td style="'+tdE+'">'+(l.equip.indexOf(e)>=0?'✓':'')+'</td>';});
+      var sig=rowSig([r.por,r.precar,r.pol,r.pod,r.oncar,r.pod2]);
+      equipCols.forEach(function(e){
+        var onv=equipChecked(sig,e,r.l.equip.indexOf(e)>=0); // default: the line's selected equipment
+        tds+=eqBodyCell(sig,e,onv,interactive);
+      });
       body+='<tr>'+tds+'</tr>';
     });
     return '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:12px;"><tr style="background:#F5F5F5;">'+th+'</tr>'+body+'</table>';
@@ -1589,7 +1776,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var sec=document.getElementById('mrSection');
     if(sec)sec.style.display=multi?'':'none';
     if(multi)renderMRLines();
-    updateLegMode();updateSubject();updateRouteSummary();
+    updateOceanRouting();updateLegMode();updateSubject();updateRouteSummary();
   }
 </script>
 </body>
