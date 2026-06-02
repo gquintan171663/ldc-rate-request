@@ -371,23 +371,23 @@
     <div class="section">SHIPMENT REFERENCE</div>
     <table>
       <tr><td class="lbl">Date / Quote ref.</td><td><input class="fld" id="f_date" placeholder="DD-MMM-YYYY / ref."></td></tr>
-      <tr><td class="lbl">Rate type <span class="req">*</span></td><td class="opts" data-validate="ratetype">
-        <span class="opt on" id="rt_spot" data-group="ratetype"><span class="box">✓</span>Spot rate</span>
-        <span class="opt" id="rt_multi" data-group="ratetype"><span class="box"></span>Multiroute</span>
-      </td></tr>
-      <tr><td class="lbl">Trade lane <span class="req">*</span></td><td class="opts" data-validate="lane">
-        <span class="opt" data-group="lane"><span class="box"></span>Export</span>
-        <span class="opt" data-group="lane"><span class="box"></span>Import</span>
-      </td></tr>
       <tr><td class="lbl">Transport mode <span class="req">*</span></td><td class="opts" data-validate="tmode">
         <span class="opt" data-group="tmode"><span class="box"></span>Ocean</span>
         <span class="opt" data-group="tmode"><span class="box"></span>Truck</span>
         <span class="opt" data-group="tmode"><span class="box"></span>Rail</span>
         <span class="opt" data-group="tmode"><span class="box"></span>Air</span>
       </td></tr>
+      <tr><td class="lbl">Trade lane <span class="req">*</span></td><td class="opts" data-validate="lane">
+        <span class="opt" data-group="lane"><span class="box"></span>Export</span>
+        <span class="opt" data-group="lane"><span class="box"></span>Import</span>
+      </td></tr>
       <tr><td class="lbl">Business status <span class="req">*</span></td><td class="opts" data-validate="status">
         <span class="opt" data-group="status"><span class="box"></span>New Business</span>
         <span class="opt" data-group="status"><span class="box"></span>Current Business</span>
+      </td></tr>
+      <tr><td class="lbl">Rate type <span class="req">*</span></td><td class="opts" data-validate="ratetype">
+        <span class="opt on" id="rt_spot" data-group="ratetype"><span class="box">✓</span>Spot rate</span>
+        <span class="opt" id="rt_multi" data-group="ratetype"><span class="box"></span>Multiroute</span>
       </td></tr>
     </table>
 
@@ -458,7 +458,7 @@
         <span class="opt" data-group="scope"><span class="box"></span>Port–Door</span>
         <span class="opt" data-group="scope"><span class="box"></span>Door–Door</span>
       </td></tr>
-      <tr><td class="lbl">Incoterm</td><td><input class="fld" id="f_inco" placeholder="e.g. FOB Origin"></td></tr>
+      <tr id="row_inco"><td class="lbl">Incoterm</td><td><input class="fld" id="f_inco" placeholder="e.g. FOB Origin"></td></tr>
     </table>
 
     <div class="mr-section" id="mrSection" style="display:none;">
@@ -883,9 +883,12 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
   // buttons, and the global Service scope hidden (scope becomes per-route).
   var spotShowPre=false, spotShowOn=false;
   function updateOceanRouting(){
-    var ocean=(group('tmode')==='Ocean');
+    var mode=group('tmode');
+    var ocean=(mode==='Ocean'),truck=(mode==='Truck');
     var scopeRow=document.getElementById('row_scope');
-    if(scopeRow)scopeRow.style.display=ocean?'none':'';
+    if(scopeRow)scopeRow.style.display=(ocean||truck)?'none':'';
+    var incoRow=document.getElementById('row_inco');
+    if(incoRow)incoRow.style.display=truck?'none':'';
     // Spot-row layout only matters when not in Multiroute (those rows are hidden then).
     var por=document.getElementById('row_por'),pod2=document.getElementById('row_pod2'),
         addpre=document.getElementById('row_addpre'),addon=document.getElementById('row_addon'),
@@ -970,6 +973,19 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
   // signature (the routing fields) -> { equipLabel: true/false }. Lets Pricing
   // tick/untick which container sizes to quote per route, in spot and multiroute.
   var EQUIP_CHECKS={};
+  // Routes manually de-selected in the summary (Truck only), keyed by row signature.
+  var ROUTE_OFF={};
+  // US ZIP dataset is large (~1MB) so it's loaded on demand (only for Truck).
+  var _usZipsState=0; // 0 not loaded, 1 loading, 2 loaded
+  function ensureUSZips(cb){
+    if(window.US_ZIPS){_usZipsState=2;if(cb)cb();return;}
+    if(_usZipsState===1)return;
+    _usZipsState=1;
+    var s=document.createElement('script');s.src='us_zips.js?v=1';
+    s.onload=function(){_usZipsState=2;if(cb)cb();};
+    s.onerror=function(){_usZipsState=0;};
+    document.head.appendChild(s);
+  }
   function rowSig(parts){return encodeURIComponent(parts.join('\u0001'));}
   function equipChecked(sig,equip,defOn){
     var m=EQUIP_CHECKS[sig];
@@ -1020,6 +1036,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     document.querySelectorAll('.leg-mode.missing').forEach(function(b){b.classList.remove('missing');});
     ROUTE_LINES=[];
     EQUIP_CHECKS={};
+    ROUTE_OFF={};
     document.querySelectorAll('.opt[data-group="ratetype"]').forEach(function(o){
       var isSpot=o.textContent.replace('✓','').trim()==='Spot rate';
       o.classList.toggle('on',isSpot);o.querySelector('.box').textContent=isSpot?'✓':'';
@@ -1066,11 +1083,11 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       row('Consignee', multiline(v('f_consignee')));
     close();
     sec('ROUTING');open();
-      var ocean=(group('tmode')==='Ocean');
+      var mode=group('tmode'),ocean=(mode==='Ocean'),truck=(mode==='Truck');
       row('Rate type', group('ratetype'));
       if(isMulti()){
-        if(!ocean)row('Service scope', group('scope'));
-        row('Incoterm', esc(v('f_inco')));
+        if(!ocean&&!truck)row('Service scope', group('scope'));
+        if(!truck)row('Incoterm', esc(v('f_inco')));
       }else{
         row('Place of Receipt', routeHTML('por'));
         // Only include pre-carriage line when it's actually selected.
@@ -1132,8 +1149,8 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
 
     // Check the five base required fields.
     REQUIRED_FIELDS.forEach(function(f){
-      // Service scope is hidden in Ocean (per-route), so it isn't required there.
-      if(f.name==='scope' && group('tmode')==='Ocean')return;
+      // Service scope is hidden in Ocean/Truck (per-route), so it isn't required there.
+      if(f.name==='scope' && (group('tmode')==='Ocean'||group('tmode')==='Truck'))return;
       var empty=false;
       if(f.kind==='group')empty=!group(f.name);
       else                empty=!v(f.name);
@@ -1367,12 +1384,13 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     return '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:12px;">'
       +'<tr style="background:#F5F5F5;">'+th+'</tr>'+body+'</table>';
   }
-  // Ocean is Multiroute-only (covers all scenarios; avoids confusing sales with Spot).
+  // Ocean and Truck are Multiroute-only (Truck = simple Origin/Destination routing).
   function applyOceanRateLock(){
-    var ocean=(group('tmode')==='Ocean');
+    var mode=group('tmode');
+    var forceMulti=(mode==='Ocean'||mode==='Truck');
     var spotChip=document.getElementById('rt_spot');
-    if(spotChip)spotChip.style.display=ocean?'none':'';
-    if(ocean && !isMulti()){
+    if(spotChip)spotChip.style.display=forceMulti?'none':'';
+    if(forceMulti && !isMulti()){
       document.querySelectorAll('.opt[data-group="ratetype"]').forEach(function(o){
         var m=o.textContent.replace('✓','').trim()==='Multiroute';
         o.classList.toggle('on',m);o.querySelector('.box').textContent=m?'✓':'';
@@ -1415,6 +1433,8 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     if(e.target.id==='btn_addon'){spotShowOn=true;updateOceanRouting();var g=document.getElementById('f_pod2');if(g)g.focus();return;}
     if(e.target.id==='rm_pre'){collapseSpotLeg('pre');return;}
     if(e.target.id==='rm_on'){collapseSpotLeg('on');return;}
+    var rtog=e.target.closest('.route-toggle');
+    if(rtog){var rs=rtog.getAttribute('data-sig');if(ROUTE_OFF[rs])delete ROUTE_OFF[rs];else ROUTE_OFF[rs]=true;updateRouteSummary();return;}
     var cell=e.target.closest('.eq-cell');
     if(cell){
       toggleEquipCheck(cell.getAttribute('data-sig'),decodeURIComponent(cell.getAttribute('data-eq')),cell.getAttribute('data-cur')==='1');
@@ -1422,7 +1442,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     }
     if(e.target.closest('.opt[data-group="ratetype"]')){setTimeout(updateRateTypeUI,0);}
     if(e.target.closest('.opt[data-group="scope"]')){setTimeout(function(){if(isMulti())renderMRLines();updateRouteSummary();},0);}
-    if(e.target.closest('.opt[data-group="tmode"]')){setTimeout(function(){applyOceanRateLock();renderEquip();updateOceanRouting();if(isMulti()){ROUTE_LINES.forEach(function(l){l.equip=[];});}updateRateTypeUI();updateRouteSummary();},0);}
+    if(e.target.closest('.opt[data-group="tmode"]')){setTimeout(function(){applyOceanRateLock();if(group('tmode')==='Truck')ensureUSZips();renderEquip();updateOceanRouting();if(isMulti()){ROUTE_LINES.forEach(function(l){l.equip=[];});}updateRateTypeUI();updateRouteSummary();},0);}
     if(e.target.closest('.opt')||e.target.closest('.btn-add')||e.target.closest('.rm')){setTimeout(updateRouteSummary,0);}
   });
   document.addEventListener('input',function(e){
@@ -1530,7 +1550,61 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     input.addEventListener('blur',function(){setTimeout(close,150);});
   }
 
-  // ===== Rate type: Spot vs Multiroute =====
+  // Truck origin/destination autocomplete: main cities + all US ZIP codes (lazy-loaded).
+  // Numeric query -> ZIP prefix match; text query -> city-name match (US + main cities).
+  function setupTruckAC(inputId, listId, onPick){
+    var input=document.getElementById(inputId), list=document.getElementById(listId);
+    if(!input||!list)return;
+    var selIdx=-1, items=[];
+    function close(){list.style.display='none';list.innerHTML='';selIdx=-1;items=[];}
+    function pick(m){if(onPick){onPick(m.value);input.value='';}else{input.value=m.value;}close();}
+    function render(matches){
+      if(!matches.length){list.innerHTML='<div class="ac-empty">Sin coincidencia — puedes escribir libre</div>';list.style.display='block';items=[];return;}
+      list.innerHTML='';
+      matches.forEach(function(m){
+        var div=document.createElement('div');div.className='ac-item';
+        div.innerHTML='<span class="nm">'+esc(m.primary)+'</span><span class="ct">'+esc(m.secondary)+'</span>';
+        div.addEventListener('mousedown',function(e){e.preventDefault();pick(m);});
+        list.appendChild(div);
+      });
+      items=matches;selIdx=-1;list.style.display='block';
+    }
+    function search(q){
+      q=q.trim();if(q.length<2){close();return;}
+      var qU=q.toUpperCase(),out=[],hasDigit=/\d/.test(q),i;
+      if(window.US_ZIPS){
+        var Z=window.US_ZIPS,cap=40;
+        if(hasDigit){
+          for(i=0;i<Z.length;i++){if(Z[i][0].indexOf(q)===0){var z=Z[i];out.push({primary:z[1]+', '+z[2]+' '+z[0],secondary:'ZIP · US',value:z[1]+', '+z[2]+' '+z[0]});if(out.length>=cap)break;}}
+        }else{
+          for(i=0;i<Z.length;i++){var z2=Z[i];if(z2[1].toUpperCase().indexOf(qU)===0){out.push({primary:z2[1]+', '+z2[2]+' '+z2[0],secondary:'ZIP · US',value:z2[1]+', '+z2[2]+' '+z2[0]});if(out.length>=cap)break;}}
+        }
+      }
+      var cc=0;
+      for(i=0;i<CITIES.length;i++){
+        var nm=CITIES[i][0].toUpperCase();
+        if(nm.indexOf(qU)===0){var c=CITIES[i],ctry=(typeof COUNTRIES!=='undefined'&&COUNTRIES[c[2]])?COUNTRIES[c[2]]:c[2],lbl=c[1]?(c[0]+', '+c[1]):c[0];out.push({primary:lbl,secondary:ctry,value:lbl});if(++cc>=20)break;}
+      }
+      render(out.slice(0,60));
+    }
+    input.addEventListener('input',function(){search(input.value);});
+    input.addEventListener('focus',function(){ensureUSZips(function(){if(document.activeElement===input&&input.value.trim().length>=2)search(input.value);});if(input.value.trim().length>=2)search(input.value);});
+    input.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){
+        if(list.style.display==='block'&&selIdx>=0&&items[selIdx]){e.preventDefault();pick(items[selIdx]);return;}
+        if(onPick&&input.value.trim()){e.preventDefault();onPick(input.value.trim());input.value='';close();return;}
+        return;
+      }
+      if(list.style.display!=='block')return;
+      var nodes=list.querySelectorAll('.ac-item');
+      if(e.key==='ArrowDown'){e.preventDefault();selIdx=Math.min(selIdx+1,nodes.length-1);}
+      else if(e.key==='ArrowUp'){e.preventDefault();selIdx=Math.max(selIdx-1,0);}
+      else if(e.key==='Escape'){close();return;}
+      else return;
+      nodes.forEach(function(n,ii){n.classList.toggle('sel',ii===selIdx);if(ii===selIdx)n.scrollIntoView({block:'nearest'});});
+    });
+    input.addEventListener('blur',function(){setTimeout(close,150);});
+  }
   // Spot  = one transport mode + one set of pre/on-carriage + one equipment, current behaviour.
   // Multi = per-line pickup/delivery mode and equipment (main mode stays single per quote).
   var ROUTE_LINES=[];
@@ -1625,6 +1699,13 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     if(!ROUTE_LINES.length)ROUTE_LINES.push(newLine(null));
     var mode=group('tmode');
     var ocean=(mode==='Ocean');
+    var truck=(mode==='Truck');
+    var polLbl=truck?'Origin(s)':'Port(s) of Loading (POL)';
+    var podLbl=truck?'Destination(s)':'Port(s) of Discharge (POD)';
+    var polPh=truck?'City / place — add several':'Port name or code — add several';
+    var podPh=truck?'City / place — add several':'Port name or code — add several';
+    var polHint=truck?'Add one or more origins. Each origin pairs with every destination below.':'Pick or type + Enter. Add several loading ports (or a base-ports set).';
+    var podHint=truck?'Add one or more destinations. Every origin × destination becomes a row below.':'Add several discharge ports. Repeat the same port to quote different destinations.';
     var equipSet=EQUIP_SETS[mode]||[];
     box.innerHTML='';
     ROUTE_LINES.forEach(function(line,i){
@@ -1634,15 +1715,15 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       // POL list (each port its own block, optional pre-carriage in Ocean)
       var pol='';
       line.pols.forEach(function(leg,j){pol+=legBlockHTML(i,'pol',leg,j,ocean);});
-      pol+='<div class="route-input-row"><div class="ac-wrap"><input class="fld mr-inp ac-port" id="mr_pol_'+i+'" autocomplete="off" placeholder="Port name or code — add several"><div class="ac-list" id="mr_acpol_'+i+'"></div></div><button type="button" class="btn-add" data-poladd="'+i+'" title="Add">+</button></div>'
-        +'<div class="route-hint">Pick or type + Enter. Add several loading ports (or a base-ports set).</div>';
-      h+=mrField('Port(s) of Loading (POL)',pol,'mr-lbl-port');
+      pol+='<div class="route-input-row"><div class="ac-wrap"><input class="fld mr-inp'+(truck?'':' ac-port')+'" id="mr_pol_'+i+'" autocomplete="off" placeholder="'+polPh+'"><div class="ac-list" id="mr_acpol_'+i+'"></div></div><button type="button" class="btn-add" data-poladd="'+i+'" title="Add">+</button></div>'
+        +'<div class="route-hint">'+polHint+'</div>';
+      h+=mrField(polLbl,pol,'mr-lbl-port');
       // POD list (each port its own block, optional on-carriage in Ocean)
       var pod='';
       line.pods.forEach(function(leg,j){pod+=legBlockHTML(i,'pod',leg,j,ocean);});
-      pod+='<div class="route-input-row"><div class="ac-wrap"><input class="fld mr-inp ac-port" id="mr_pod_'+i+'" autocomplete="off" placeholder="Port name or code — add several"><div class="ac-list" id="mr_acpod_'+i+'"></div></div><button type="button" class="btn-add" data-podadd="'+i+'" title="Add">+</button></div>'
-        +'<div class="route-hint">Add several discharge ports. Repeat the same port to quote different destinations.</div>';
-      h+=mrField('Port(s) of Discharge (POD)',pod,'mr-lbl-port');
+      pod+='<div class="route-input-row"><div class="ac-wrap"><input class="fld mr-inp'+(truck?'':' ac-port')+'" id="mr_pod_'+i+'" autocomplete="off" placeholder="'+podPh+'"><div class="ac-list" id="mr_acpod_'+i+'"></div></div><button type="button" class="btn-add" data-podadd="'+i+'" title="Add">+</button></div>'
+        +'<div class="route-hint">'+podHint+'</div>';
+      h+=mrField(podLbl,pod,'mr-lbl-port');
       // Equipment
       var eq='<div class="mr-equip" id="mr_equip_'+i+'">';
       if(!mode)eq+='<span class="mr-hint">Selecciona primero el modo de transporte.</span>';
@@ -1653,10 +1734,11 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     });
     // Wiring
     ROUTE_LINES.forEach(function(line,i){
+      var acSetup=truck?setupTruckAC:setupPortAC;
       var polInp=document.getElementById('mr_pol_'+i);
-      if(polInp)setupPortAC('mr_pol_'+i,'mr_acpol_'+i,function(val){addLineLeg(i,'pol',val);});
+      if(polInp)acSetup('mr_pol_'+i,'mr_acpol_'+i,function(val){addLineLeg(i,'pol',val);});
       var podInp=document.getElementById('mr_pod_'+i);
-      if(podInp)setupPortAC('mr_pod_'+i,'mr_acpod_'+i,function(val){addLineLeg(i,'pod',val);});
+      if(podInp)acSetup('mr_pod_'+i,'mr_acpod_'+i,function(val){addLineLeg(i,'pod',val);});
       line.pols.forEach(function(leg,j){
         if(!leg.showPre)return;
         var id='mr_por_'+i+'_'+j,inp=document.getElementById(id);if(!inp)return;
@@ -1741,32 +1823,44 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var showDest  =rows.some(function(r){return r.pod2;});
 
     var rCols=[{h:'#'}];
+    var truck=(group('tmode')==='Truck');
     if(showOrigin)rCols.push({h:'Origin',k:'por'});
     if(showPre)rCols.push({h:'Pre-carriage',k:'precar'});
-    rCols.push({h:'POL',k:'pol'},{h:'POD',k:'pod'});
+    rCols.push({h:truck?'Origin':'POL',k:'pol'},{h:truck?'Destination':'POD',k:'pod'});
     if(showOn)rCols.push({h:'On-carriage',k:'oncar'});
     if(showDest)rCols.push({h:'Destination',k:'pod2'});
 
     var thC='padding:6px 8px;text-align:left;color:#9B1B25;font-weight:bold;border-bottom:1px solid #DADADA;white-space:nowrap;';
     var tdC='padding:6px 8px;color:#1A1A1A;border-bottom:1px solid #EEEEEE;vertical-align:top;';
     var th='';
+    if(truck&&interactive)th+='<td style="'+thC+'text-align:center;">Cotizar</td>';
     rCols.forEach(function(c){th+='<td style="'+thC+'">'+c.h+'</td>';});
     equipCols.forEach(function(e){th+=eqHeadCell(e);});
-    var body='';
-    rows.forEach(function(r,ri){
-      var tds='';
-      rCols.forEach(function(c){
-        var val=(c.h==='#')?String(ri+1):r[c.k];
-        tds+='<td style="'+tdC+'">'+(esc(val)||'&mdash;')+'</td>';
-      });
+    var body='',n=0;
+    rows.forEach(function(r){
       var sig=rowSig([r.por,r.precar,r.pol,r.pod,r.oncar,r.pod2]);
+      var off=truck && !!ROUTE_OFF[sig];
+      if(off && !interactive)return; // de-selected routes are dropped from email / Excel
+      n++;
+      var strike=off?'text-decoration:line-through;color:#9AA4AE;':'';
+      var tds='';
+      if(truck&&interactive)tds+=routeToggleCell(sig,!off);
+      rCols.forEach(function(c){
+        var val=(c.h==='#')?String(n):r[c.k];
+        tds+='<td style="'+tdC+strike+'">'+(esc(val)||'&mdash;')+'</td>';
+      });
       equipCols.forEach(function(e){
         var onv=equipChecked(sig,e,r.l.equip.indexOf(e)>=0); // default: the line's selected equipment
         tds+=eqBodyCell(sig,e,onv,interactive);
       });
-      body+='<tr>'+tds+'</tr>';
+      body+='<tr style="'+(off?'opacity:.55;':'')+'">'+tds+'</tr>';
     });
     return '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:12px;"><tr style="background:#F5F5F5;">'+th+'</tr>'+body+'</table>';
+  }
+  function routeToggleCell(sig,on){
+    var box='display:inline-block;width:18px;height:18px;line-height:18px;border-radius:4px;font-size:12px;font-weight:bold;'
+      +(on?'background:#1A7F37;color:#fff;border:1px solid #1A7F37;':'background:#fff;color:#9B1B25;border:1px solid #C9CDD2;');
+    return '<td class="route-toggle" data-sig="'+sig+'" style="padding:6px 8px;text-align:center;border-bottom:1px solid #EEEEEE;cursor:pointer;" title="Incluir / quitar esta ruta"><span style="'+box+'">'+(on?'✓':'✕')+'</span></td>';
   }
 
   // Show/hide the Spot inputs vs the Multiroute editor.
