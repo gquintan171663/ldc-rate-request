@@ -319,6 +319,18 @@
     .route-chip{background:#fff;border:none;border-left:2px solid var(--red);border-radius:0;padding-left:8px;}
     .route-chip .rm{display:none;}
   }
+  .mr-section{margin:6px 0 2px;font-family:Arial,Helvetica,sans-serif;}
+  .mr-title{color:#9B1B25;font-size:11px;font-weight:bold;letter-spacing:1px;border-bottom:1px solid #EEEEEE;padding-bottom:5px;}
+  .mr-card{border:1px solid #E2E2E2;border-radius:8px;padding:10px 12px;margin:10px 0;background:#FCFCFC;}
+  .mr-head{display:flex;justify-content:space-between;align-items:center;}
+  .mr-n{font-weight:700;font-size:13px;color:#1A1A1A;}
+  .mr-rm{background:#fff;color:#9B1B25;border:1px solid #E2C3C6;border-radius:6px;font-size:11px;padding:3px 9px;cursor:pointer;}
+  .mr-fields{margin-top:8px;}
+  .mr-field{margin:8px 0;}
+  .mr-lbl{font-size:11px;color:#777;margin-bottom:3px;letter-spacing:.3px;}
+  .mr-modes,.mr-equip{display:flex;flex-wrap:wrap;gap:6px;}
+  .mr-hint{font-size:12px;color:#888;}
+  .mr-addbtn{background:#1A1A1A;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;padding:9px 14px;cursor:pointer;margin-top:4px;}
 </style>
 </head>
 <body>
@@ -348,6 +360,10 @@
     <div class="section">SHIPMENT REFERENCE</div>
     <table>
       <tr><td class="lbl">Date / Quote ref.</td><td><input class="fld" id="f_date" placeholder="DD-MMM-YYYY / ref."></td></tr>
+      <tr><td class="lbl">Rate type <span class="req">*</span></td><td class="opts" data-validate="ratetype">
+        <span class="opt on" data-group="ratetype"><span class="box">✓</span>Spot rate</span>
+        <span class="opt" data-group="ratetype"><span class="box"></span>Multiroute</span>
+      </td></tr>
       <tr><td class="lbl">Trade lane <span class="req">*</span></td><td class="opts" data-validate="lane">
         <span class="opt" data-group="lane"><span class="box"></span>Export</span>
         <span class="opt" data-group="lane"><span class="box"></span>Import</span>
@@ -359,10 +375,8 @@
         <span class="opt" data-group="tmode"><span class="box"></span>Air</span>
       </td></tr>
       <tr><td class="lbl">Business status <span class="req">*</span></td><td class="opts" data-validate="status">
-        <span class="opt" data-group="status"><span class="box"></span>Prospect</span>
-        <span class="opt" data-group="status"><span class="box"></span>Current customer</span>
-        <span class="opt" data-group="status"><span class="box"></span>New lane</span>
-        <span class="opt" data-group="status"><span class="box"></span>LDC own cargo</span>
+        <span class="opt" data-group="status"><span class="box"></span>New Business</span>
+        <span class="opt" data-group="status"><span class="box"></span>Current Business</span>
       </td></tr>
     </table>
 
@@ -375,10 +389,10 @@
 
     <div class="section">ROUTING</div>
     <table>
-      <tr><td class="lbl">Place of Receipt</td><td>
+      <tr class="spot-only"><td class="lbl">Place of Receipt</td><td>
         <ul class="route-list" id="list_por"></ul>
         <div class="route-input-row">
-          <div class="ac-wrap"><input class="fld" id="f_por" autocomplete="off" placeholder="City / facility — Enter to add"></div>
+          <div class="ac-wrap"><input class="fld ac-port" id="f_por" autocomplete="off" placeholder="City — type to search MX / CN / US, or free text"><div class="ac-list" id="ac_por"></div></div>
           <button type="button" class="btn-add" data-add="por" title="Add">+</button>
         </div>
         <div class="route-hint">Add one or more — Enter or “+”.</div>
@@ -390,7 +404,7 @@
           </div>
         </div>
       </td></tr>
-      <tr><td class="lbl">Port of Loading (POL)</td><td>
+      <tr class="spot-only"><td class="lbl">Port of Loading (POL)</td><td>
         <ul class="route-list" id="list_pol"></ul>
         <div class="route-input-row">
           <div class="ac-wrap"><input class="fld ac-port" id="f_pol" autocomplete="off" placeholder="Type port name or code…"><div class="ac-list" id="ac_pol"></div></div>
@@ -398,7 +412,7 @@
         </div>
         <div class="route-hint">Pick from the list (auto-adds) or type freely + Enter. Add several for multi-route.</div>
       </td></tr>
-      <tr><td class="lbl">Port of Discharge (POD)</td><td>
+      <tr class="spot-only"><td class="lbl">Port of Discharge (POD)</td><td>
         <ul class="route-list" id="list_pod"></ul>
         <div class="route-input-row">
           <div class="ac-wrap"><input class="fld ac-port" id="f_pod" autocomplete="off" placeholder="Type port name or code…"><div class="ac-list" id="ac_pod"></div></div>
@@ -406,10 +420,10 @@
         </div>
         <div class="route-hint">Pick from the list (auto-adds) or type freely + Enter. Add several for multi-route.</div>
       </td></tr>
-      <tr><td class="lbl">Place of Delivery</td><td>
+      <tr class="spot-only"><td class="lbl">Place of Delivery</td><td>
         <ul class="route-list" id="list_pod2"></ul>
         <div class="route-input-row">
-          <div class="ac-wrap"><input class="fld" id="f_pod2" autocomplete="off" placeholder="City / facility — Enter to add"></div>
+          <div class="ac-wrap"><input class="fld ac-port" id="f_pod2" autocomplete="off" placeholder="City — type to search MX / CN / US, or free text"><div class="ac-list" id="ac_pod2"></div></div>
           <button type="button" class="btn-add" data-add="pod2" title="Add">+</button>
         </div>
         <div class="route-hint">Add one or more — Enter or “+”.</div>
@@ -430,10 +444,19 @@
       <tr><td class="lbl">Incoterm</td><td><input class="fld" id="f_inco" placeholder="e.g. FOB Origin"></td></tr>
     </table>
 
+    <div class="mr-section" id="mrSection" style="display:none;">
+      <div class="mr-title">MULTIROUTE LINES — each line has its own pickup / delivery mode and equipment</div>
+      <div id="mrLines"></div>
+      <button type="button" class="mr-addbtn" onclick="addMRLine()">+ Agregar línea</button>
+    </div>
+
     <div class="section">CARGO</div>
     <table>
       <tr><td class="lbl">Commodity / HS code</td><td><input class="fld" id="f_comm" placeholder="Description / HS"></td></tr>
-      <tr><td class="lbl">Equipment type</td><td><input class="fld" id="f_equip" placeholder="e.g. 1 × 40' HC"></td></tr>
+      <tr class="spot-only"><td class="lbl">Equipment type</td><td>
+        <div class="opts" id="equipOpts" data-validate="equip"></div>
+        <div class="route-hint" id="equipHint">Pick the transport mode first to see equipment types.</div>
+      </td></tr>
       <tr><td class="lbl">Weight / dimensions</td><td><input class="fld" id="f_weight" placeholder="e.g. 22.5 ton max"></td></tr>
       <tr><td class="lbl">Est. volume / frequency</td><td><input class="fld" id="f_vol" placeholder="e.g. 8 units / month"></td></tr>
       <tr><td class="lbl">Special handling</td><td class="opts">
@@ -444,6 +467,8 @@
       </td></tr>
       <tr><td class="lbl">Target / ready date</td><td><input class="fld" id="f_ready" placeholder="DD-MMM-YYYY"></td></tr>
     </table>
+
+    <div class="route-summary" id="routeSummary" style="display:none;margin:0 0 4px;padding:0 2px;"></div>
 
     <div class="action">
       <div class="h">ACTION REQUIRED / NOTES</div>
@@ -506,7 +531,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
   document.querySelectorAll('.opt').forEach(function(o){
     o.addEventListener('click',function(){
       var grp=o.dataset.group;
-      var single=(grp==='lane'||grp==='status'||grp==='tmode'||grp==='precar'||grp==='oncar');
+      var single=(grp==='lane'||grp==='status'||grp==='tmode'||grp==='precar'||grp==='oncar'||grp==='ratetype');
       if(single){
         document.querySelectorAll('.opt[data-group="'+grp+'"]').forEach(function(x){
           if(x!==o){x.classList.remove('on');x.querySelector('.box').textContent='';}
@@ -519,6 +544,14 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
 
   // ===== Port autocomplete (UN/LOCODE seaports) =====
   // PORTS is an array of [code, name, countryCode]; COUNTRIES maps cc->name.
+  // PORT_GROUPS are consolidated picks (base ports / regions) that insert a single
+  // chip instead of listing ports one by one — common for maritime quoting.
+  var PORT_GROUPS=[
+    {group:true,name:'China Base Ports (all regions)',ports:['Shanghai (CNSGH)','Ningbo (CNNBO)','Qingdao (CNQIN)','Shenzhen (CNSNZ)','Guangzhou (CNGGZ)','Xiamen (CNXAM)','Tianjin (CNTNJ)','Dalian (CNDAL)']},
+    {group:true,name:'North China Base Ports',ports:['Qingdao (CNQIN)','Tianjin (CNTNJ)','Dalian (CNDAL)']},
+    {group:true,name:'East China Base Ports',ports:['Shanghai (CNSGH)','Ningbo (CNNBO)']},
+    {group:true,name:'South & Southeast China Base Ports',ports:['Shenzhen (CNSNZ)','Guangzhou (CNGGZ)','Xiamen (CNXAM)','Hong Kong (HKHKG)']}
+  ];
   function setupPortAC(inputId, listId, onPick){
     var input=document.getElementById(inputId);
     var list=document.getElementById(listId);
@@ -526,9 +559,15 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
 
     function close(){list.style.display='none';list.innerHTML='';selIdx=-1;items=[];}
     function pick(p){
+      if(p.group){
+        // Expand into one entry per port — same as adding them manually one by one.
+        if(onPick){p.ports.forEach(function(pt){onPick(pt);});input.value='';}
+        else{input.value=p.ports.join(', ');input.dispatchEvent(new Event('input',{bubbles:true}));}
+        close();return;
+      }
       var val=p[1]+' ('+p[0]+')';
       if(onPick){onPick(val);input.value='';}
-      else{input.value=val;}
+      else{input.value=val;input.dispatchEvent(new Event('input',{bubbles:true}));}
       close();
     }
     function render(matches){
@@ -540,8 +579,12 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       matches.forEach(function(p,i){
         var div=document.createElement('div');
         div.className='ac-item';
-        var ctry=COUNTRIES[p[2]]||p[2];
-        div.innerHTML='<span class="code">'+p[0]+'</span><span class="nm">'+p[1]+'</span><span class="ct">'+ctry+'</span>';
+        if(p.group){
+          div.innerHTML='<span class="code" style="background:#C8202E;color:#fff;">SET</span><span class="nm">'+p.name+'</span><span class="ct">'+p.ports.map(function(x){return x.replace(/\s*\([^)]*\)\s*$/,'');}).join(' · ')+'</span>';
+        }else{
+          var ctry=COUNTRIES[p[2]]||p[2];
+          div.innerHTML='<span class="code">'+p[0]+'</span><span class="nm">'+p[1]+'</span><span class="ct">'+ctry+'</span>';
+        }
         div.addEventListener('mousedown',function(e){e.preventDefault();pick(p);});
         list.appendChild(div);
       });
@@ -550,6 +593,10 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     function search(q){
       q=q.trim().toUpperCase();
       if(q.length<2){close();return;}
+      var groups=[];
+      for(var g=0;g<PORT_GROUPS.length;g++){
+        if(PORT_GROUPS[g].name.toUpperCase().indexOf(q)>=0||PORT_GROUPS[g].ports.some(function(pt){return pt.toUpperCase().indexOf(q)>=0;}))groups.push(PORT_GROUPS[g]);
+      }
       var byCode=[], byStart=[], byContain=[];
       for(var i=0;i<PORTS.length;i++){
         var p=PORTS[i];
@@ -560,7 +607,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
         if(nm.indexOf(q)>0){byContain.push(p);}
         if(byCode.length+byStart.length+byContain.length>400)break;
       }
-      var res=byCode.concat(byStart).concat(byContain).slice(0,50);
+      var res=groups.concat(byCode).concat(byStart).concat(byContain).slice(0,50);
       render(res);
     }
     input.addEventListener('input',function(){search(input.value);});
@@ -618,14 +665,10 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
   setupPortAC('f_pol','ac_pol',function(val){addRoute('pol',val);});
   setupPortAC('f_pod','ac_pod',function(val){addRoute('pod',val);});
 
-  // Plain place fields: Enter adds to the list
-  ['por','pod2'].forEach(function(key){
-    var inp=document.getElementById('f_'+key);
-    if(!inp)return;
-    inp.addEventListener('keydown',function(e){
-      if(e.key==='Enter'){e.preventDefault();addRoute(key,inp.value);inp.value='';}
-    });
-  });
+  // Place of Receipt / Place of Delivery: city autocomplete (MX / CN / US) — pick
+  // from the list (auto-adds) or type freely + Enter. Mirrors the port fields.
+  setupCityAC('f_por','ac_por',function(val){addRoute('por',val);});
+  setupCityAC('f_pod2','ac_pod2',function(val){addRoute('pod2',val);});
 
   // "+" buttons add the current input value to the matching list
   document.querySelectorAll('.btn-add').forEach(function(btn){
@@ -683,30 +726,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       if(fallback.length===1)return fallback[0];
       return 'Multiple';
     }
-    if(arr.length===1){
-      var p=findPort(arr[0]);
-      if(p){
-        var cc=p[2]||'';
-        // City (CC) — keep the country code short; full name is too long for a subject.
-        return p[1]+' ('+cc+')';
-      }
-      return arr[0]; // free text — use as-is
-    }
-    // Multiple chips: check if they all resolve to the same country.
-    var countries={};
-    var resolvedAll=true;
-    arr.forEach(function(chip){
-      var p=findPort(chip);
-      if(p && p[2]){countries[p[2]]=true;}
-      else{resolvedAll=false;}
-    });
-    var keys=Object.keys(countries);
-    if(resolvedAll && keys.length===1){
-      // All ports in the same country.
-      var cName=(typeof COUNTRIES!=='undefined' && COUNTRIES[keys[0]])?COUNTRIES[keys[0]]:keys[0];
-      return cName+' multiple';
-    }
-    return 'Multiple';
+    return tokenFromArray(arr);
   }
 
   // Build the full subject string.
@@ -715,8 +735,14 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var date = v('f_date');
     var lane = group('lane');         // Export / Import
     var cust = v('f_customer');
-    var origin = endpointToken('pol');
-    var dest   = endpointToken('pod');
+    var origin, dest;
+    if(isMulti()){
+      origin=tokenFromArray(ROUTE_LINES.map(function(l){return l.pol;}).filter(Boolean));
+      dest  =tokenFromArray(ROUTE_LINES.reduce(function(a,l){return a.concat(l.pods);},[]).filter(Boolean));
+    }else{
+      origin=endpointToken('pol');
+      dest  =endpointToken('pod');
+    }
     var scope  = group('scope');
 
     var parts = [];
@@ -790,7 +816,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     }
   });
   // Initial render after page load.
-  setTimeout(function(){updateSubject();updateLegMode();},50);
+  setTimeout(function(){updateSubject();updateLegMode();renderEquip();updateRateTypeUI();updateRouteSummary();},50);
 
   // ===== Leg mode (pre-/on-carriage) visibility =====
   // Show "Pre-carriage mode" under Place of Receipt and "On-carriage mode"
@@ -811,7 +837,9 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       var key=cfg[0], grp=cfg[1], boxId=cfg[2];
       var box=document.getElementById(boxId);
       if(!box)return;
-      var show = isOcean && legHasContent(key);
+      // Show whenever the matching place field has content (any transport mode),
+      // so the pre-/on-carriage choice is always available, not just for Ocean.
+      var show = legHasContent(key);
       if(show){
         box.style.display='block';
         // Clear "missing" highlight once a choice is made.
@@ -881,6 +909,14 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     document.querySelectorAll('textarea').forEach(function(t){t.style.height='';});
     clearMissingMarks();
     document.querySelectorAll('.leg-mode.missing').forEach(function(b){b.classList.remove('missing');});
+    ROUTE_LINES=[];
+    document.querySelectorAll('.opt[data-group="ratetype"]').forEach(function(o){
+      var isSpot=o.textContent.replace('✓','').trim()==='Spot rate';
+      o.classList.toggle('on',isSpot);o.querySelector('.box').textContent=isSpot?'✓':'';
+    });
+    renderEquip();
+    updateRateTypeUI();
+    updateRouteSummary();
     updateSubject();
   }
 
@@ -920,19 +956,25 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       row('Consignee', multiline(v('f_consignee')));
     close();
     sec('ROUTING');open();
-      row('Place of Receipt', routeHTML('por'));
-      // Only include pre-carriage line when it's actually selected.
-      if(group('precar'))row('&nbsp;&nbsp;Pre-carriage mode', group('precar'));
-      row('Port of Loading (POL)', routeHTML('pol'));
-      row('Port of Discharge (POD)', routeHTML('pod'));
-      row('Place of Delivery', routeHTML('pod2'));
-      if(group('oncar'))row('&nbsp;&nbsp;On-carriage mode', group('oncar'));
-      row('Service scope', group('scope'));
-      row('Incoterm', esc(v('f_inco')));
+      row('Rate type', group('ratetype'));
+      if(isMulti()){
+        row('Service scope', group('scope'));
+        row('Incoterm', esc(v('f_inco')));
+      }else{
+        row('Place of Receipt', routeHTML('por'));
+        // Only include pre-carriage line when it's actually selected.
+        if(group('precar'))row('&nbsp;&nbsp;Pre-carriage mode', group('precar'));
+        row('Port of Loading (POL)', routeHTML('pol'));
+        row('Port of Discharge (POD)', routeHTML('pod'));
+        row('Place of Delivery', routeHTML('pod2'));
+        if(group('oncar'))row('&nbsp;&nbsp;On-carriage mode', group('oncar'));
+        row('Service scope', group('scope'));
+        row('Incoterm', esc(v('f_inco')));
+      }
     close();
     sec('CARGO');open();
       row('Commodity / HS code', esc(v('f_comm')));
-      row('Equipment type', esc(v('f_equip')));
+      if(!isMulti())row('Equipment type', group('equip'));
       row('Weight / dimensions', esc(v('f_weight')));
       row('Est. volume / frequency', esc(v('f_vol')));
       row('Special handling', group('special'));
@@ -944,6 +986,12 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
       +'<div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:#1A1A1A;">ACTION REQUIRED / NOTES</div>'
       +'<div style="font-size:14px;color:#1A1A1A;padding-top:4px;">'+(multiline(v('f_action'))||'&mdash;')+'</div>'
       +'</td></tr></table></td></tr>';
+    // Route summary — per-line table in Multiroute, index-paired table in Spot multi-route.
+    var rs=isMulti()?routeLinesTableHTML():routeTableHTML();
+    if(rs){
+      sec(isMulti()?'ROUTE LINES &mdash; MULTIROUTE':'ROUTE SUMMARY &mdash; MULTI-ROUTE');
+      H+='<tr><td style="padding:8px 22px 2px;">'+rs+'</td></tr>';
+    }
     H+='<tr><td style="padding:12px 22px 18px;">'
       +'<div style="border-top:1px solid #EEEEEE;padding-top:12px;font-size:11px;color:#9A9A9A;line-height:1.6;">'
       +'Please confirm rate validity, free time at destination, and any applicable surcharges (BAF / GRI / PSS) when quoting. Rates and space subject to confirmation at time of booking.</div>'
@@ -1002,7 +1050,12 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
 
   function printForm(){
     if(!validateLegModes())return;
+    updateRouteSummary();
+    var mrs=document.getElementById('mrSection');
+    var prev=mrs?mrs.style.display:'';
+    if(isMulti()&&mrs)mrs.style.display='none';
     window.print();
+    if(mrs)mrs.style.display=prev;
   }
 
   function copyForEmail(){
@@ -1039,6 +1092,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var swaps=[];
     var hidden=[];
     var routeIds={f_por:'por',f_pol:'pol',f_pod:'pod',f_pod2:'pod2'};
+    if(isMulti()){var _mrs=document.getElementById('mrSection');if(_mrs){_mrs.style.display='none';hidden.push(_mrs);}}
 
     // Route fields: fold any leftover input text into the chip list, then hide
     // the input row / hint so the image shows only the stacked route chips.
@@ -1068,6 +1122,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     // Remaining plain fields (everything except route inputs) -> span swap
     sheet.querySelectorAll('input.fld, textarea.fld, #f_action').forEach(function(inp){
       if(routeIds[inp.id])return; // route inputs already handled
+      if(inp.closest('#mrSection'))return; // per-line editor is hidden in the image
       var span=document.createElement('span');
       var val=inp.value&&inp.value.trim()?inp.value:'—';
       span.textContent=val;
@@ -1091,6 +1146,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
         else{el.style.display='';}
       });
     }
+    updateRouteSummary();
     html2canvas(sheet,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false}).then(function(canvas){
       restore();
       canvas.toBlob(function(blob){
@@ -1116,6 +1172,424 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     if(msg)t.textContent=msg;
     t.classList.add('show');
     setTimeout(function(){t.classList.remove('show');},2600);
+  }
+
+  // ===== Equipment type selector (driven by transport mode) =====
+  // A request is a single transport mode, so the equipment list shown depends
+  // on the chosen mode. Quantity is NOT captured here — it goes, approximately,
+  // in "Est. volume / frequency". Picking a different mode clears the selection.
+  var EQUIP_SETS={
+    'Ocean':["20' GP","40' GP","40' HC","20' RF","40' RF/HC","20' OT","40' OT","20' FR","40' FR","20' Tank","40' Tank","45' HC"],
+    'Truck':["Caja seca 53'","Caja seca 48'","Refrigerado 53'","Plataforma / Flatbed","Lowboy / Cama baja","Full (doble remolque)","Tolva"],
+    'Rail' :["Boxcar","Intermodal 53'","Plataforma / Flatbed","Tolva","Refrigerado"],
+    'Air'  :[]
+  };
+  function renderEquip(){
+    var box=document.getElementById('equipOpts');
+    var hint=document.getElementById('equipHint');
+    if(!box)return;
+    var mode=group('tmode');
+    box.innerHTML='';
+    if(!mode){if(hint)hint.textContent='Pick the transport mode first to see equipment types.';return;}
+    if(mode==='Air'){if(hint)hint.textContent='Air freight — describe pieces, weight and dimensions in the fields below.';return;}
+    (EQUIP_SETS[mode]||[]).forEach(function(label){
+      var span=document.createElement('span');
+      span.className='opt';
+      span.setAttribute('data-group','equip');
+      span.innerHTML='<span class="box"></span>'+label;
+      span.addEventListener('click',function(){
+        span.classList.toggle('on');
+        span.querySelector('.box').textContent=span.classList.contains('on')?'✓':'';
+        updateSubject();updateRouteSummary();
+      });
+      box.appendChild(span);
+    });
+    if(hint)hint.textContent='Quantity goes in “Est. volume / frequency”. Pick one or more.';
+  }
+
+  // ===== Multi-route summary =====
+  // Pairs the POR / POL / POD / Place-of-Delivery lists into rows (row i = the
+  // i-th entry of each list; a single-entry list repeats; an empty cell is "—").
+  // Only produced when at least one routing list has 2+ entries.
+  function routeRows(){
+    var por=routeValues('por'),pol=routeValues('pol'),pod=routeValues('pod'),pod2=routeValues('pod2');
+    var n=Math.max(por.length,pol.length,pod.length,pod2.length);
+    if(n<2)return null;
+    function pick(a,i){return a.length?(a[i]||(a.length===1?a[0]:'')):'';}
+    var rows=[];
+    for(var i=0;i<n;i++)rows.push([pick(por,i),pick(pol,i),pick(pod,i),pick(pod2,i)]);
+    return rows;
+  }
+  function routeTableHTML(){
+    var rows=routeRows();
+    if(!rows)return '';
+    var pre=group('precar'),on=group('oncar');
+    var cols=[{h:'#'},{h:'Place of Receipt',idx:0}];
+    if(pre)cols.push({h:'Pre-carriage',leg:pre});
+    cols.push({h:'POL',idx:1},{h:'POD',idx:2});
+    if(on)cols.push({h:'On-carriage',leg:on});
+    cols.push({h:'Place of Delivery',idx:3});
+    var thCell='padding:6px 8px;text-align:left;color:#9B1B25;font-weight:bold;border-bottom:1px solid #DADADA;white-space:nowrap;';
+    var tdCell='padding:6px 8px;color:#1A1A1A;border-bottom:1px solid #EEEEEE;vertical-align:top;';
+    var th='';cols.forEach(function(c){th+='<td style="'+thCell+'">'+c.h+'</td>';});
+    var body='';
+    rows.forEach(function(r,ri){
+      var tds='';
+      cols.forEach(function(c){
+        var val;
+        if(c.h==='#')val=String(ri+1);
+        else if(c.leg!==undefined)val=c.leg;
+        else val=r[c.idx];
+        tds+='<td style="'+tdCell+'">'+(esc(val)||'&mdash;')+'</td>';
+      });
+      body+='<tr>'+tds+'</tr>';
+    });
+    return '<table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:12px;">'
+      +'<tr style="background:#F5F5F5;">'+th+'</tr>'+body+'</table>';
+  }
+  function updateRouteSummary(){
+    var c=document.getElementById('routeSummary');
+    if(!c)return;
+    var multi=isMulti();
+    var html=multi?routeLinesTableHTML():routeTableHTML();
+    if(!html){c.style.display='none';c.innerHTML='';return;}
+    c.style.display='';
+    var label=multi?'ROUTE LINES — MULTIROUTE':'ROUTE SUMMARY — MULTI-ROUTE';
+    c.innerHTML='<div style="color:#9B1B25;font-size:11px;font-weight:bold;letter-spacing:1px;border-bottom:1px solid #EEEEEE;padding-bottom:5px;margin:6px 0 8px;font-family:Arial,Helvetica,sans-serif;">'+label+'</div><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'+html+'</div>';
+  }
+
+  // Keep equipment options and the route summary in sync with the form.
+  document.addEventListener('click',function(e){
+    if(e.target.closest('.opt[data-group="ratetype"]')){setTimeout(updateRateTypeUI,0);}
+    if(e.target.closest('.opt[data-group="scope"]')){setTimeout(function(){if(isMulti())renderMRLines();updateRouteSummary();},0);}
+    if(e.target.closest('.opt[data-group="tmode"]')){setTimeout(function(){renderEquip();if(isMulti()){ROUTE_LINES.forEach(function(l){l.equip=[];});renderMRLines();}updateRouteSummary();},0);}
+    if(e.target.closest('.opt')||e.target.closest('.btn-add')||e.target.closest('.rm')){setTimeout(updateRouteSummary,0);}
+  });
+  document.addEventListener('input',function(e){
+    if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))updateRouteSummary();
+  });
+
+  // ===== City autocomplete (Mexico / China / USA) =====
+  // CITIES[i] = [name, admin/state, countryCode]. Curated list of freight-relevant
+  // cities, ports, industrial hubs and border crossings. Free text still allowed.
+  var CITIES=[
+    // ---- Mexico ----
+    ["Monterrey","Nuevo León","MX"],["Guadalupe","Nuevo León","MX"],["San Nicolás de los Garza","Nuevo León","MX"],["Apodaca","Nuevo León","MX"],["Santa Catarina","Nuevo León","MX"],["García","Nuevo León","MX"],["San Pedro Garza García","Nuevo León","MX"],["General Escobedo","Nuevo León","MX"],["Juárez","Nuevo León","MX"],["Cadereyta Jiménez","Nuevo León","MX"],["Salinas Victoria","Nuevo León","MX"],["Ciénega de Flores","Nuevo León","MX"],["Pesquería","Nuevo León","MX"],["El Carmen","Nuevo León","MX"],
+    ["Saltillo","Coahuila","MX"],["Ramos Arizpe","Coahuila","MX"],["Torreón","Coahuila","MX"],["Monclova","Coahuila","MX"],["Piedras Negras","Coahuila","MX"],["Ciudad Acuña","Coahuila","MX"],
+    ["Ciudad de México","CDMX","MX"],
+    ["Guadalajara","Jalisco","MX"],["Zapopan","Jalisco","MX"],["Tlaquepaque","Jalisco","MX"],["El Salto","Jalisco","MX"],["Puerto Vallarta","Jalisco","MX"],
+    ["Tijuana","Baja California","MX"],["Mexicali","Baja California","MX"],["Ensenada","Baja California","MX"],["Tecate","Baja California","MX"],
+    ["Ciudad Juárez","Chihuahua","MX"],["Chihuahua","Chihuahua","MX"],["Delicias","Chihuahua","MX"],
+    ["Reynosa","Tamaulipas","MX"],["Matamoros","Tamaulipas","MX"],["Nuevo Laredo","Tamaulipas","MX"],["Tampico","Tamaulipas","MX"],["Altamira","Tamaulipas","MX"],["Ciudad Victoria","Tamaulipas","MX"],
+    ["Hermosillo","Sonora","MX"],["Nogales","Sonora","MX"],["Guaymas","Sonora","MX"],["Ciudad Obregón","Sonora","MX"],["San Luis Río Colorado","Sonora","MX"],
+    ["Querétaro","Querétaro","MX"],["El Marqués","Querétaro","MX"],["San Juan del Río","Querétaro","MX"],
+    ["Aguascalientes","Aguascalientes","MX"],["San Luis Potosí","San Luis Potosí","MX"],
+    ["León","Guanajuato","MX"],["Silao","Guanajuato","MX"],["Irapuato","Guanajuato","MX"],["Celaya","Guanajuato","MX"],["Salamanca","Guanajuato","MX"],["Guanajuato","Guanajuato","MX"],
+    ["Puebla","Puebla","MX"],
+    ["Toluca","México","MX"],["Lerma","México","MX"],["Cuautitlán Izcalli","México","MX"],["Tepotzotlán","México","MX"],["Naucalpan","México","MX"],["Tlalnepantla","México","MX"],["Ecatepec","México","MX"],
+    ["Veracruz","Veracruz","MX"],["Xalapa","Veracruz","MX"],["Coatzacoalcos","Veracruz","MX"],["Córdoba","Veracruz","MX"],["Orizaba","Veracruz","MX"],
+    ["Manzanillo","Colima","MX"],["Colima","Colima","MX"],
+    ["Lázaro Cárdenas","Michoacán","MX"],["Morelia","Michoacán","MX"],
+    ["Mérida","Yucatán","MX"],["Progreso","Yucatán","MX"],
+    ["Cancún","Quintana Roo","MX"],["Playa del Carmen","Quintana Roo","MX"],["Chetumal","Quintana Roo","MX"],
+    ["Mazatlán","Sinaloa","MX"],["Culiacán","Sinaloa","MX"],["Los Mochis","Sinaloa","MX"],
+    ["Durango","Durango","MX"],["Gómez Palacio","Durango","MX"],
+    ["Zacatecas","Zacatecas","MX"],["Tepic","Nayarit","MX"],["Villahermosa","Tabasco","MX"],
+    ["Tuxtla Gutiérrez","Chiapas","MX"],["Tapachula","Chiapas","MX"],
+    ["Oaxaca","Oaxaca","MX"],["Salina Cruz","Oaxaca","MX"],
+    ["Acapulco","Guerrero","MX"],["Cuernavaca","Morelos","MX"],["Pachuca","Hidalgo","MX"],["Tula","Hidalgo","MX"],["Tlaxcala","Tlaxcala","MX"],["Campeche","Campeche","MX"],["La Paz","Baja California Sur","MX"],["Los Cabos","Baja California Sur","MX"],
+    // ---- China ----
+    ["Shanghai","","CN"],["Beijing","","CN"],["Tianjin","","CN"],["Chongqing","","CN"],["Hong Kong","","CN"],
+    ["Shenzhen","Guangdong","CN"],["Guangzhou","Guangdong","CN"],["Dongguan","Guangdong","CN"],["Foshan","Guangdong","CN"],["Zhongshan","Guangdong","CN"],["Zhuhai","Guangdong","CN"],["Huizhou","Guangdong","CN"],["Shantou","Guangdong","CN"],["Jiangmen","Guangdong","CN"],
+    ["Ningbo","Zhejiang","CN"],["Hangzhou","Zhejiang","CN"],["Wenzhou","Zhejiang","CN"],["Yiwu","Zhejiang","CN"],["Jinhua","Zhejiang","CN"],
+    ["Suzhou","Jiangsu","CN"],["Nanjing","Jiangsu","CN"],["Wuxi","Jiangsu","CN"],["Changzhou","Jiangsu","CN"],["Nantong","Jiangsu","CN"],["Lianyungang","Jiangsu","CN"],["Kunshan","Jiangsu","CN"],["Taicang","Jiangsu","CN"],
+    ["Qingdao","Shandong","CN"],["Yantai","Shandong","CN"],["Jinan","Shandong","CN"],["Weifang","Shandong","CN"],["Rizhao","Shandong","CN"],
+    ["Dalian","Liaoning","CN"],["Shenyang","Liaoning","CN"],["Yingkou","Liaoning","CN"],
+    ["Xiamen","Fujian","CN"],["Fuzhou","Fujian","CN"],["Quanzhou","Fujian","CN"],
+    ["Wuhan","Hubei","CN"],["Chengdu","Sichuan","CN"],["Xi'an","Shaanxi","CN"],["Zhengzhou","Henan","CN"],["Changsha","Hunan","CN"],["Nanchang","Jiangxi","CN"],["Hefei","Anhui","CN"],["Kunming","Yunnan","CN"],["Nanning","Guangxi","CN"],["Qinzhou","Guangxi","CN"],["Haikou","Hainan","CN"],
+    // ---- United States ----
+    ["Los Angeles","CA","US"],["Long Beach","CA","US"],["Oakland","CA","US"],["San Diego","CA","US"],["San Francisco","CA","US"],["Sacramento","CA","US"],["Stockton","CA","US"],["Ontario","CA","US"],["San Bernardino","CA","US"],["Riverside","CA","US"],["Otay Mesa","CA","US"],["Calexico","CA","US"],
+    ["Laredo","TX","US"],["Houston","TX","US"],["Dallas","TX","US"],["Fort Worth","TX","US"],["San Antonio","TX","US"],["El Paso","TX","US"],["Austin","TX","US"],["Brownsville","TX","US"],["Pharr","TX","US"],["McAllen","TX","US"],["Eagle Pass","TX","US"],["Del Rio","TX","US"],["Corpus Christi","TX","US"],
+    ["Nogales","AZ","US"],["Phoenix","AZ","US"],["Tucson","AZ","US"],
+    ["New York","NY","US"],["Buffalo","NY","US"],["Newark","NJ","US"],["Elizabeth","NJ","US"],
+    ["Savannah","GA","US"],["Atlanta","GA","US"],["Charleston","SC","US"],["Norfolk","VA","US"],["Charlotte","NC","US"],
+    ["Miami","FL","US"],["Jacksonville","FL","US"],["Tampa","FL","US"],["Port Everglades","FL","US"],["Orlando","FL","US"],
+    ["Chicago","IL","US"],["Detroit","MI","US"],["Memphis","TN","US"],["Nashville","TN","US"],["Kansas City","MO","US"],["St. Louis","MO","US"],
+    ["Seattle","WA","US"],["Tacoma","WA","US"],["Portland","OR","US"],["Denver","CO","US"],["Salt Lake City","UT","US"],["Las Vegas","NV","US"],["Reno","NV","US"],
+    ["Baltimore","MD","US"],["Philadelphia","PA","US"],["Boston","MA","US"],["New Orleans","LA","US"],["Mobile","AL","US"],
+    ["Cincinnati","OH","US"],["Columbus","OH","US"],["Cleveland","OH","US"],["Indianapolis","IN","US"],["Minneapolis","MN","US"]
+  ];
+  function setupCityAC(inputId, listId, onPick){
+    var input=document.getElementById(inputId);
+    var list=document.getElementById(listId);
+    if(!input||!list)return;
+    var selIdx=-1, items=[];
+    function close(){list.style.display='none';list.innerHTML='';selIdx=-1;items=[];}
+    function label(c){return c[1]?(c[0]+', '+c[1]):c[0];}
+    function pick(c){if(onPick){onPick(label(c));input.value='';}else{input.value=label(c);input.dispatchEvent(new Event('input',{bubbles:true}));}close();}
+    function render(matches){
+      if(!matches.length){list.innerHTML='<div class="ac-empty">No city found — you can type freely</div>';list.style.display='block';return;}
+      list.innerHTML='';
+      matches.forEach(function(c){
+        var div=document.createElement('div');div.className='ac-item';
+        var ctry=(typeof COUNTRIES!=='undefined'&&COUNTRIES[c[2]])?COUNTRIES[c[2]]:c[2];
+        div.innerHTML='<span class="nm">'+c[0]+'</span><span class="ct">'+(c[1]?c[1]+' · ':'')+ctry+'</span>';
+        div.addEventListener('mousedown',function(e){e.preventDefault();pick(c);});
+        list.appendChild(div);
+      });
+      items=matches;selIdx=-1;list.style.display='block';
+    }
+    function search(q){
+      q=q.trim().toUpperCase();
+      if(q.length<2){close();return;}
+      var byStart=[], byContain=[];
+      for(var i=0;i<CITIES.length;i++){
+        var nm=CITIES[i][0].toUpperCase();
+        if(nm.indexOf(q)===0)byStart.push(CITIES[i]);
+        else if(nm.indexOf(q)>0)byContain.push(CITIES[i]);
+        if(byStart.length+byContain.length>120)break;
+      }
+      render(byStart.concat(byContain).slice(0,50));
+    }
+    input.addEventListener('input',function(){search(input.value);});
+    input.addEventListener('focus',function(){if(input.value.trim().length>=2)search(input.value);});
+    input.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){
+        if(list.style.display==='block'&&selIdx>=0&&items[selIdx]){e.preventDefault();pick(items[selIdx]);return;}
+        if(onPick&&input.value.trim()){e.preventDefault();onPick(input.value.trim());input.value='';close();return;}
+        return;
+      }
+      if(list.style.display!=='block')return;
+      var nodes=list.querySelectorAll('.ac-item');
+      if(e.key==='ArrowDown'){e.preventDefault();selIdx=Math.min(selIdx+1,nodes.length-1);}
+      else if(e.key==='ArrowUp'){e.preventDefault();selIdx=Math.max(selIdx-1,0);}
+      else if(e.key==='Escape'){close();return;}
+      else return;
+      nodes.forEach(function(n,i){n.classList.toggle('sel',i===selIdx);if(i===selIdx)n.scrollIntoView({block:'nearest'});});
+    });
+    input.addEventListener('blur',function(){setTimeout(close,150);});
+  }
+
+  // ===== Rate type: Spot vs Multiroute =====
+  // Spot  = one transport mode + one set of pre/on-carriage + one equipment, current behaviour.
+  // Multi = per-line pickup/delivery mode and equipment (main mode stays single per quote).
+  var ROUTE_LINES=[];
+  function isMulti(){return group('ratetype')==='Multiroute';}
+
+  // Which per-line fields the Service scope needs. Unset scope => show everything.
+  function lineScopeFlags(){
+    var s=group('scope');
+    return {
+      origin:(s===''||s==='Door–Port'||s==='Door–Door'),
+      dest:(s===''||s==='Port–Door'||s==='Door–Door')
+    };
+  }
+  function newLine(prev){
+    return {por:'',precar:'',pol:'',pods:[],oncar:'',pod2:'',equip:prev?prev.equip.slice():[]};
+  }
+  function addMRLine(){
+    ROUTE_LINES.push(newLine(ROUTE_LINES[ROUTE_LINES.length-1]));
+    renderMRLines();updateSubject();updateRouteSummary();
+  }
+  function removeMRLine(i){ROUTE_LINES.splice(i,1);renderMRLines();updateSubject();updateRouteSummary();}
+
+  function mrField(label,inner){return '<div class="mr-field"><div class="mr-lbl">'+label+'</div>'+inner+'</div>';}
+  function mrModeField(label,grp,i){
+    var s='<div class="mr-modes" id="mr_'+grp+'_'+i+'">';
+    ['All Truck','Rail Combined'].forEach(function(v){s+='<span class="opt mr-mode" data-val="'+v+'"><span class="box"></span>'+v+'</span>';});
+    return mrField(label,s+'</div>');
+  }
+  function mrSetVal(id,val){var e=document.getElementById(id);if(e)e.value=val||'';}
+
+  // Show/hide a line's pre/on-carriage mode field based on whether its place is filled,
+  // clearing the mode when hidden.
+  function toggleLineMode(i,which,line){
+    var w=document.getElementById(which==='pre'?'mr_prewrap_'+i:'mr_onwrap_'+i);
+    if(!w)return;
+    var hasPlace=which==='pre'?!!(line.por&&line.por.trim()):!!(line.pod2&&line.pod2.trim());
+    if(hasPlace){w.style.display='';}
+    else{
+      w.style.display='none';
+      var grp=which==='pre'?'precar':'oncar';
+      line[grp]='';
+      var mw=document.getElementById('mr_'+grp+'_'+i);
+      if(mw)mw.querySelectorAll('.mr-mode').forEach(function(x){x.classList.remove('on');x.querySelector('.box').textContent='';});
+    }
+  }
+  function renderLinePods(i){
+    var ul=document.getElementById('mr_podlist_'+i);if(!ul)return;
+    ul.innerHTML='';
+    ROUTE_LINES[i].pods.forEach(function(val,j){
+      var li=document.createElement('li');li.className='route-chip';
+      li.innerHTML='<span class="seq">'+(j+1)+'.</span><span class="txt"></span><button type="button" class="rm" title="Remove">×</button>';
+      li.querySelector('.txt').textContent=val;
+      li.querySelector('.rm').addEventListener('click',function(){removeLinePod(i,j);});
+      ul.appendChild(li);
+    });
+  }
+  function addLinePod(i,val){
+    val=(val||'').trim();if(!val)return;
+    ROUTE_LINES[i].pods.push(val);renderLinePods(i);
+    var inp=document.getElementById('mr_pod_'+i);if(inp)inp.value='';
+    updateSubject();updateRouteSummary();
+  }
+  function removeLinePod(i,j){ROUTE_LINES[i].pods.splice(j,1);renderLinePods(i);updateSubject();updateRouteSummary();}
+
+  function renderMRLines(){
+    var box=document.getElementById('mrLines');
+    if(!box)return;
+    if(!ROUTE_LINES.length)ROUTE_LINES.push(newLine(null));
+    var fl=lineScopeFlags();
+    var mode=group('tmode');
+    var equipSet=EQUIP_SETS[mode]||[];
+    box.innerHTML='';
+    ROUTE_LINES.forEach(function(line,i){
+      var card=document.createElement('div');card.className='mr-card';
+      var h='<div class="mr-head"><span class="mr-n">Línea '+(i+1)+'</span><button type="button" class="mr-rm" data-i="'+i+'">Quitar</button></div><div class="mr-fields">';
+      if(fl.origin){
+        h+=mrField('Origin (Place of Receipt)','<div class="ac-wrap"><input class="fld mr-inp" id="mr_por_'+i+'" autocomplete="off" placeholder="City — MX / CN / US"><div class="ac-list" id="mr_acpor_'+i+'"></div></div>');
+        h+='<div id="mr_prewrap_'+i+'" style="display:none;">'+mrModeField('Pre-carriage mode','precar',i)+'</div>';
+      }
+      h+=mrField('Port of Loading (POL)','<div class="ac-wrap"><input class="fld mr-inp ac-port" id="mr_pol_'+i+'" autocomplete="off" placeholder="Port name or code"><div class="ac-list" id="mr_acpol_'+i+'"></div></div>');
+      h+=mrField('Port(s) of Discharge (POD)',
+        '<ul class="route-list" id="mr_podlist_'+i+'"></ul>'
+        +'<div class="route-input-row"><div class="ac-wrap"><input class="fld mr-inp ac-port" id="mr_pod_'+i+'" autocomplete="off" placeholder="Port name or code — add several"><div class="ac-list" id="mr_acpod_'+i+'"></div></div>'
+        +'<button type="button" class="btn-add" data-podadd="'+i+'" title="Add">+</button></div>'
+        +'<div class="route-hint">Pick or type + Enter. Add several discharge ports for this origin.</div>');
+      if(fl.dest){
+        h+=mrField('Destination (Place of Delivery)','<div class="ac-wrap"><input class="fld mr-inp" id="mr_pod2_'+i+'" autocomplete="off" placeholder="City — MX / CN / US"><div class="ac-list" id="mr_acpod2_'+i+'"></div></div>');
+        h+='<div id="mr_onwrap_'+i+'" style="display:none;">'+mrModeField('On-carriage mode','oncar',i)+'</div>';
+      }
+      var eq='<div class="mr-equip" id="mr_equip_'+i+'">';
+      if(!mode)eq+='<span class="mr-hint">Selecciona primero el modo de transporte.</span>';
+      else if(mode==='Air')eq+='<span class="mr-hint">Aéreo — describe piezas / peso / dimensiones abajo.</span>';
+      else equipSet.forEach(function(lab){eq+='<span class="opt mr-eq" data-eq="'+esc(lab)+'"><span class="box"></span>'+lab+'</span>';});
+      h+=mrField('Equipment type',eq+'</div>')+'</div>';
+      card.innerHTML=h;box.appendChild(card);
+    });
+    ROUTE_LINES.forEach(function(line,i){
+      [['mr_por_'+i,'por','mr_acpor_'+i,'city'],['mr_pol_'+i,'pol','mr_acpol_'+i,'port'],
+       ['mr_pod2_'+i,'pod2','mr_acpod2_'+i,'city']].forEach(function(c){
+        var inp=document.getElementById(c[0]);if(!inp)return;
+        if(c[3]==='port')setupPortAC(c[0],c[2],null);else setupCityAC(c[0],c[2],null);
+        mrSetVal(c[0],line[c[1]]);
+        function sync(){line[c[1]]=inp.value;if(c[1]==='por')toggleLineMode(i,'pre',line);if(c[1]==='pod2')toggleLineMode(i,'on',line);updateSubject();updateRouteSummary();}
+        inp.addEventListener('input',sync);
+        inp.addEventListener('blur',sync);
+      });
+      var podInp=document.getElementById('mr_pod_'+i);
+      if(podInp)setupPortAC('mr_pod_'+i,'mr_acpod_'+i,function(val){addLinePod(i,val);});
+      renderLinePods(i);
+      var eqWrap=document.getElementById('mr_equip_'+i);
+      if(eqWrap)eqWrap.querySelectorAll('.mr-eq').forEach(function(sp){
+        var lab=sp.getAttribute('data-eq');
+        if(line.equip.indexOf(lab)>=0){sp.classList.add('on');sp.querySelector('.box').textContent='✓';}
+        sp.addEventListener('click',function(){
+          var on=sp.classList.toggle('on');sp.querySelector('.box').textContent=on?'✓':'';
+          var idx=line.equip.indexOf(lab);
+          if(on&&idx<0)line.equip.push(lab);else if(!on&&idx>=0)line.equip.splice(idx,1);
+          updateSubject();updateRouteSummary();
+        });
+      });
+      ['precar','oncar'].forEach(function(grp){
+        var w=document.getElementById('mr_'+grp+'_'+i);if(!w)return;
+        w.querySelectorAll('.mr-mode').forEach(function(sp){
+          var val=sp.getAttribute('data-val');
+          if(line[grp]===val){sp.classList.add('on');sp.querySelector('.box').textContent='✓';}
+          sp.addEventListener('click',function(){
+            var wasOn=sp.classList.contains('on');
+            w.querySelectorAll('.mr-mode').forEach(function(x){x.classList.remove('on');x.querySelector('.box').textContent='';});
+            if(wasOn){line[grp]='';}
+            else{sp.classList.add('on');sp.querySelector('.box').textContent='✓';line[grp]=val;}
+            updateSubject();updateRouteSummary();
+          });
+        });
+      });
+      toggleLineMode(i,'pre',line);
+      toggleLineMode(i,'on',line);
+    });
+    box.querySelectorAll('.btn-add[data-podadd]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var i=parseInt(b.getAttribute('data-podadd'),10);
+        var inp=document.getElementById('mr_pod_'+i);
+        if(inp){addLinePod(i,inp.value);inp.focus();}
+      });
+    });
+    box.querySelectorAll('.mr-rm').forEach(function(b){b.addEventListener('click',function(){removeMRLine(parseInt(b.getAttribute('data-i'),10));});});
+  }
+
+  // Shared "array of endpoints -> compact token" used by subject (spot and multi).
+  function tokenFromArray(arr){
+    if(!arr.length)return '';
+    if(arr.length===1){var p=findPort(arr[0]);return p?(p[1]+' ('+(p[2]||'')+')'):arr[0];}
+    var countries={},resolvedAll=true;
+    arr.forEach(function(chip){var p=findPort(chip);if(p&&p[2])countries[p[2]]=true;else resolvedAll=false;});
+    var keys=Object.keys(countries);
+    if(resolvedAll&&keys.length===1){var cN=(typeof COUNTRIES!=='undefined'&&COUNTRIES[keys[0]])?COUNTRIES[keys[0]]:keys[0];return cN+' multiple';}
+    return 'Multiple';
+  }
+
+  // Per-line table (Outlook-safe inline styles). One column per distinct equipment
+  // type, with a ✓ where that equipment must be quoted for the route — so Pricing
+  // can read it at a glance.
+  function routeLinesTableHTML(){
+    if(!isMulti())return '';
+    var fl=lineScopeFlags();
+    var lines=ROUTE_LINES.filter(function(l){return l.por||l.pol||l.pods.length||l.pod2||l.equip.length;});
+    if(!lines.length)return '';
+    // Distinct equipment used across the lines, in the mode's natural order.
+    var equipCols=[];
+    (EQUIP_SETS[group('tmode')]||[]).forEach(function(e){if(lines.some(function(l){return l.equip.indexOf(e)>=0;}))equipCols.push(e);});
+    lines.forEach(function(l){l.equip.forEach(function(e){if(equipCols.indexOf(e)<0)equipCols.push(e);});});
+    // Effective leg modes apply only when the matching place is filled.
+    function preOf(l){return l.por?l.precar:'';}
+    function onOf(l){return l.pod2?l.oncar:'';}
+    var showPre=fl.origin && lines.some(function(l){return preOf(l);});
+    var showOn =fl.dest   && lines.some(function(l){return onOf(l);});
+    // One row per POD (or a single row if the line has no POD yet).
+    var rows=[];
+    lines.forEach(function(l){(l.pods.length?l.pods:['']).forEach(function(pd){rows.push({l:l,pod:pd});});});
+
+    var rCols=[{h:'#'}];
+    if(fl.origin)rCols.push({h:'Origin',k:'por'});
+    if(showPre)rCols.push({h:'Pre-carriage',k:'pre'});
+    rCols.push({h:'POL',k:'pol'},{h:'POD',k:'pod'});
+    if(showOn)rCols.push({h:'On-carriage',k:'on'});
+    if(fl.dest)rCols.push({h:'Destination',k:'pod2'});
+
+    var thC='padding:6px 8px;text-align:left;color:#9B1B25;font-weight:bold;border-bottom:1px solid #DADADA;white-space:nowrap;';
+    var thE='padding:6px 8px;text-align:center;color:#9B1B25;font-weight:bold;border-bottom:1px solid #DADADA;border-left:1px solid #EEEEEE;white-space:nowrap;';
+    var tdC='padding:6px 8px;color:#1A1A1A;border-bottom:1px solid #EEEEEE;vertical-align:top;';
+    var tdE='padding:6px 8px;text-align:center;border-bottom:1px solid #EEEEEE;border-left:1px solid #EEEEEE;font-weight:bold;color:#1A7F37;';
+    var th='';
+    rCols.forEach(function(c){th+='<td style="'+thC+'">'+c.h+'</td>';});
+    equipCols.forEach(function(e){th+='<td style="'+thE+'">'+esc(e)+'</td>';});
+    var body='';
+    rows.forEach(function(r,ri){
+      var l=r.l,tds='';
+      rCols.forEach(function(c){
+        var val;
+        if(c.h==='#')val=String(ri+1);
+        else if(c.k==='pod')val=r.pod;
+        else if(c.k==='pre')val=preOf(l);
+        else if(c.k==='on')val=onOf(l);
+        else val=l[c.k];
+        tds+='<td style="'+tdC+'">'+(esc(val)||'&mdash;')+'</td>';
+      });
+      equipCols.forEach(function(e){tds+='<td style="'+tdE+'">'+(l.equip.indexOf(e)>=0?'✓':'')+'</td>';});
+      body+='<tr>'+tds+'</tr>';
+    });
+    return '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:12px;"><tr style="background:#F5F5F5;">'+th+'</tr>'+body+'</table>';
+  }
+
+  // Show/hide the Spot inputs vs the Multiroute editor.
+  function updateRateTypeUI(){
+    var multi=isMulti();
+    document.querySelectorAll('.spot-only').forEach(function(el){el.style.display=multi?'none':'';});
+    var sec=document.getElementById('mrSection');
+    if(sec)sec.style.display=multi?'':'none';
+    if(multi)renderMRLines();
+    updateLegMode();updateSubject();updateRouteSummary();
   }
 </script>
 </body>
