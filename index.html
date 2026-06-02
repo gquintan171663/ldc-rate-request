@@ -1823,7 +1823,9 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var showDest  =rows.some(function(r){return r.pod2;});
 
     var rCols=[{h:'#'}];
-    var truck=(group('tmode')==='Truck');
+    var mode=group('tmode');
+    var truck=(mode==='Truck');
+    var canOff=(mode==='Truck'||mode==='Ocean'); // per-route de-select column
     if(showOrigin)rCols.push({h:'Origin',k:'por'});
     if(showPre)rCols.push({h:'Pre-carriage',k:'precar'});
     rCols.push({h:truck?'Origin':'POL',k:'pol'},{h:truck?'Destination':'POD',k:'pod'});
@@ -1833,18 +1835,18 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     var thC='padding:6px 8px;text-align:left;color:#9B1B25;font-weight:bold;border-bottom:1px solid #DADADA;white-space:nowrap;';
     var tdC='padding:6px 8px;color:#1A1A1A;border-bottom:1px solid #EEEEEE;vertical-align:top;';
     var th='';
-    if(truck&&interactive)th+='<td style="'+thC+'text-align:center;">Cotizar</td>';
+    if(canOff&&interactive)th+='<td style="'+thC+'text-align:center;">Cotizar</td>';
     rCols.forEach(function(c){th+='<td style="'+thC+'">'+c.h+'</td>';});
     equipCols.forEach(function(e){th+=eqHeadCell(e);});
     var body='',n=0;
     rows.forEach(function(r){
       var sig=rowSig([r.por,r.precar,r.pol,r.pod,r.oncar,r.pod2]);
-      var off=truck && !!ROUTE_OFF[sig];
+      var off=canOff && !!ROUTE_OFF[sig];
       if(off && !interactive)return; // de-selected routes are dropped from email / Excel
       n++;
       var strike=off?'text-decoration:line-through;color:#9AA4AE;':'';
       var tds='';
-      if(truck&&interactive)tds+=routeToggleCell(sig,!off);
+      if(canOff&&interactive)tds+=routeToggleCell(sig,!off);
       rCols.forEach(function(c){
         var val=(c.h==='#')?String(n):r[c.k];
         tds+='<td style="'+tdC+strike+'">'+(esc(val)||'&mdash;')+'</td>';
