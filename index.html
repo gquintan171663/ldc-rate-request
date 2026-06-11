@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LDC — Rate Request / Sales Lead</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --ink:#1A1A1A;
@@ -46,6 +47,7 @@
   }
   button:active{transform:scale(.98);}
   .btn-copy{background:var(--red);color:#fff;}
+  .btn-save{background:#1A7F37;color:#fff;}
   .btn-img{background:#1A1A1A;color:#fff;}
   .btn-print{background:#fff;color:var(--ink);border:1px solid #CCC;}
   .btn-reset{background:#fff;color:#888;border:1px solid #DDD;}
@@ -348,6 +350,7 @@
 
 <div class="toolbar">
   <button class="btn-copy" onclick="copyForEmail()">Copy as text</button>
+  <button class="btn-save" onclick="saveRR()">💾 Guardar</button>
   <button class="btn-img" onclick="copyAsImage()">Copy as image</button>
   <button class="btn-print" onclick="printForm()">Print / Save PDF</button>
   <button class="btn-reset" onclick="resetForm()">Clear</button>
@@ -364,7 +367,7 @@
   <div class="header">
     <div class="title">RATE REQUEST — SALES LEAD</div>
     <div class="tag">EXPORT / IMPORT</div>
-    <div class="build" style="font-size:9px;color:#9AA4AE;letter-spacing:.5px;margin-top:2px;">build 2026-06-11b · multi pre+on carriage</div>
+    <div class="build" id="buildStamp" style="font-size:9px;color:#9AA4AE;letter-spacing:.5px;margin-top:2px;">build 2026-06-11c · guardar en Supabase</div>
   </div>
 
   <div class="body">
@@ -2009,6 +2012,211 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     if(multi)renderMRLines();
     updateOceanRouting();updateLegMode();updateSubject();updateRouteSummary();
   }
+</script>
+<script>
+/* =======================================================================
+   LDC — Guardar Rate Request en Supabase (login por código de 6 dígitos)
+   ======================================================================= */
+(function(){
+  var SUPA_URL='https://kxjiryaxtalwjkfavwlr.supabase.co';
+  var SUPA_KEY='sb_publishable_Q6cJTbb4CWBAyVsUxqQnWA_w6qfBSIE';
+  var sb=null;
+  function client(){
+    if(sb)return sb;
+    if(!window.supabase||!window.supabase.createClient)return null;
+    sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+    return sb;
+  }
+
+  /* ---------- recolección del formulario ---------- */
+  function uniq(a){var o={},r=[];a.forEach(function(x){x=(x||'').trim();if(x&&!o[x]){o[x]=1;r.push(x);}});return r;}
+
+  // arrays denormalizados (origins / destinations / pols / pods / equipment)
+  function collectArrays(){
+    var mode=group('tmode'), out={origins:[],destinations:[],pols:[],pods:[],equipment:[]};
+    if(isMulti()){
+      var pols=[],pods=[],pres=[],ons=[],equip=[];
+      ROUTE_LINES.forEach(function(ln){
+        (ln.pols||[]).forEach(function(pl){
+          if(pl.port)pols.push(pl.port);
+          (pl.pres||[]).forEach(function(p){if(p.por)pres.push(p.por);});
+        });
+        (ln.pods||[]).forEach(function(pd){
+          if(pd.port)pods.push(pd.port);
+          (pd.ons||[]).forEach(function(o){if(o.pod2)ons.push(o.pod2);});
+        });
+        (ln.equip||[]).forEach(function(e){equip.push(e);});
+      });
+      if(mode==='Truck'){ out.origins=uniq(pols); out.destinations=uniq(pods); }
+      else { out.pols=uniq(pols); out.pods=uniq(pods); out.origins=uniq(pres); out.destinations=uniq(ons); }
+      out.equipment=uniq(equip);
+    } else {
+      out.origins=uniq(routeValues('por'));
+      out.pols=uniq(routeValues('pol'));
+      out.pods=uniq(routeValues('pod'));
+      out.destinations=uniq(routeValues('pod2'));
+      out.equipment=uniq(groupArr('equip'));
+    }
+    return out;
+  }
+
+  // snapshot completo para el campo data jsonb
+  function snapshotState(){
+    var inputs={};
+    document.querySelectorAll('input[id],textarea[id]').forEach(function(e){
+      if(e.type==='button'||e.type==='file')return; inputs[e.id]=e.value;
+    });
+    var groups={};
+    document.querySelectorAll('.opt[data-group].on').forEach(function(o){
+      var g=o.getAttribute('data-group');(groups[g]=groups[g]||[]).push((o.textContent||'').replace('✓','').trim());
+    });
+    var subjEl=document.getElementById('subjectText')||document.querySelector('.subject-text');
+    return {
+      inputs:inputs, groups:groups,
+      routes:(typeof ROUTES!=='undefined')?ROUTES:null,
+      lines:(typeof ROUTE_LINES!=='undefined')?ROUTE_LINES:null,
+      equipChecks:(typeof EQUIP_CHECKS!=='undefined')?EQUIP_CHECKS:null,
+      routeOff:(typeof ROUTE_OFF!=='undefined')?ROUTE_OFF:null,
+      subject:subjEl?(subjEl.textContent||'').trim():'',
+      savedAt:new Date().toISOString(),
+      appBuild:(document.getElementById('buildStamp')||{}).textContent||''
+    };
+  }
+
+  function collectRR(status){
+    var a=collectArrays();
+    return {
+      status:status,
+      client:v('f_customer'),
+      trade_lane:group('lane'),
+      transport_mode:group('tmode'),
+      rate_type:group('ratetype'),
+      origins:a.origins, destinations:a.destinations,
+      pols:a.pols, pods:a.pods, equipment:a.equipment,
+      data:snapshotState()
+    };
+  }
+
+  /* ---------- modal genérico ---------- */
+  function modal(html){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    var box=document.createElement('div');
+    box.style.cssText='background:#fff;border-radius:10px;max-width:380px;width:92%;padding:22px;font-family:Arial,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.25);';
+    box.innerHTML=html; ov.appendChild(box); document.body.appendChild(ov);
+    ov._close=function(){ov.remove();};
+    return ov;
+  }
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  /* ---------- login por código (OTP email) ---------- */
+  function askLogin(){
+    return new Promise(function(resolve){
+      var ov=modal(
+        '<div style="font-size:17px;font-weight:bold;color:#1A1A1A;margin-bottom:6px;">Iniciar sesión para guardar</div>'+
+        '<div style="font-size:13px;color:#666;margin-bottom:14px;line-height:1.45;">Te enviaremos un código de 6 dígitos a tu correo LDC.</div>'+
+        '<input id="lg_email" type="email" placeholder="tucorreo@ldcorporation.com" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccc;border-radius:6px;font-size:14px;margin-bottom:10px;">'+
+        '<div id="lg_codewrap" style="display:none;">'+
+          '<input id="lg_code" inputmode="numeric" maxlength="6" placeholder="Código de 6 dígitos" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccc;border-radius:6px;font-size:14px;letter-spacing:3px;margin-bottom:10px;">'+
+        '</div>'+
+        '<div id="lg_msg" style="font-size:12px;color:#C8202E;min-height:16px;margin-bottom:8px;"></div>'+
+        '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
+          '<button id="lg_cancel" style="padding:9px 14px;border:1px solid #ccc;background:#fff;border-radius:6px;cursor:pointer;font-size:13px;">Cancelar</button>'+
+          '<button id="lg_go" style="padding:9px 14px;border:none;background:#1A7F37;color:#fff;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;">Enviar código</button>'+
+        '</div>'
+      );
+      var stage='email';
+      var emailEl=ov.querySelector('#lg_email'), codeWrap=ov.querySelector('#lg_codewrap'),
+          codeEl=ov.querySelector('#lg_code'), msg=ov.querySelector('#lg_msg'), go=ov.querySelector('#lg_go');
+      ov.querySelector('#lg_cancel').onclick=function(){ov._close();resolve(null);};
+      function setMsg(t,ok){msg.textContent=t||'';msg.style.color=ok?'#1A7F37':'#C8202E';}
+      go.onclick=function(){
+        var c=client(); if(!c){setMsg('No se pudo cargar Supabase. Revisa tu conexión.');return;}
+        if(stage==='email'){
+          var em=(emailEl.value||'').trim().toLowerCase();
+          if(!/^[^@]+@[^@]+\.[^@]+$/.test(em)){setMsg('Escribe un correo válido.');return;}
+          go.disabled=true;setMsg('Enviando código…',true);
+          c.auth.signInWithOtp({email:em,options:{shouldCreateUser:true}}).then(function(r){
+            go.disabled=false;
+            if(r.error){setMsg(r.error.message||'No se pudo enviar el código.');return;}
+            stage='code';codeWrap.style.display='block';go.textContent='Verificar y continuar';
+            emailEl.setAttribute('readonly','readonly');emailEl.style.background='#f4f4f4';
+            setMsg('Código enviado. Revisa tu correo.',true);codeEl.focus();
+          });
+        } else {
+          var em2=(emailEl.value||'').trim().toLowerCase();
+          var tok=(codeEl.value||'').trim();
+          if(tok.length<6){setMsg('Escribe el código de 6 dígitos.');return;}
+          go.disabled=true;setMsg('Verificando…',true);
+          c.auth.verifyOtp({email:em2,token:tok,type:'email'}).then(function(r){
+            go.disabled=false;
+            if(r.error){setMsg(r.error.message||'Código incorrecto.');return;}
+            ov._close();resolve(r.data&&r.data.session?r.data.session:true);
+          });
+        }
+      };
+      emailEl.addEventListener('keydown',function(e){if(e.key==='Enter')go.click();});
+      codeEl.addEventListener('keydown',function(e){if(e.key==='Enter')go.click();});
+      emailEl.focus();
+    });
+  }
+
+  /* ---------- elección de estatus ---------- */
+  function askStatus(){
+    return new Promise(function(resolve){
+      var ov=modal(
+        '<div style="font-size:17px;font-weight:bold;color:#1A1A1A;margin-bottom:6px;">¿Cómo guardar?</div>'+
+        '<div style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.45;">Elige si lo dejas como borrador o lo envías a Pricing para cotizar.</div>'+
+        '<div style="display:flex;flex-direction:column;gap:10px;">'+
+          '<button id="st_draft" style="padding:12px;border:1px solid #ccc;background:#fff;border-radius:8px;cursor:pointer;font-size:14px;text-align:left;"><b>Guardar como borrador</b><br><span style="font-size:12px;color:#666;">Lo seguirás editando; Pricing no lo ve aún.</span></button>'+
+          '<button id="st_submit" style="padding:12px;border:none;background:#C8202E;color:#fff;border-radius:8px;cursor:pointer;font-size:14px;text-align:left;"><b>Enviar a Pricing</b><br><span style="font-size:12px;color:#ffd9dc;">Queda listo para que Pricing lo cotice.</span></button>'+
+        '</div>'+
+        '<div style="text-align:right;margin-top:14px;"><button id="st_cancel" style="padding:8px 12px;border:none;background:transparent;color:#666;cursor:pointer;font-size:13px;">Cancelar</button></div>'
+      );
+      ov.querySelector('#st_draft').onclick=function(){ov._close();resolve('draft');};
+      ov.querySelector('#st_submit').onclick=function(){ov._close();resolve('submitted');};
+      ov.querySelector('#st_cancel').onclick=function(){ov._close();resolve(null);};
+    });
+  }
+
+  function toast(t){
+    if(typeof showToast==='function'){showToast(t);return;}
+    var d=modal('<div style="font-size:14px;color:#1A1A1A;">'+esc(t)+'</div><div style="text-align:right;margin-top:14px;"><button id="tk" style="padding:8px 14px;border:none;background:#1A7F37;color:#fff;border-radius:6px;cursor:pointer;">OK</button></div>');
+    d.querySelector('#tk').onclick=function(){d._close();};
+  }
+
+  /* ---------- flujo principal ---------- */
+  window.saveRR=function(){
+    // 1) obligatorios
+    if(typeof validateLegModes==='function' && !validateLegModes())return;
+    if(typeof syncInputs==='function')syncInputs();
+    var c=client();
+    if(!c){toast('No se pudo cargar Supabase. Revisa tu conexión a internet e inténtalo de nuevo.');return;}
+
+    c.auth.getSession().then(function(s){
+      var session=s&&s.data?s.data.session:null;
+      var ensure=session?Promise.resolve(session):askLogin();
+      ensure.then(function(sess){
+        if(!sess)return; // canceló login
+        askStatus().then(function(status){
+          if(!status)return; // canceló estatus
+          var payload=collectRR(status);
+          c.from('rate_requests').insert(payload).select('folio').single().then(function(res){
+            if(res.error){
+              var m=res.error.message||'';
+              if(/row-level security|permission|policy/i.test(m))
+                toast('Guardado bloqueado: tu correo no está autorizado en el sistema. Avisa a Gabriel para darte de alta.');
+              else toast('No se pudo guardar: '+m);
+              return;
+            }
+            var folio=res.data&&res.data.folio?res.data.folio:'(sin folio)';
+            toast('✅ Guardado como '+folio+(status==='submitted'?' y enviado a Pricing.':' (borrador).'));
+          });
+        });
+      });
+    });
+  };
+})();
 </script>
 </body>
 </html>
