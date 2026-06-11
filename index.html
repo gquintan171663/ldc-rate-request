@@ -367,7 +367,7 @@
   <div class="header">
     <div class="title">RATE REQUEST — SALES LEAD</div>
     <div class="tag">EXPORT / IMPORT</div>
-    <div class="build" id="buildStamp" style="font-size:9px;color:#9AA4AE;letter-spacing:.5px;margin-top:2px;">build 2026-06-11c · guardar en Supabase</div>
+    <div class="build" id="buildStamp" style="font-size:9px;color:#9AA4AE;letter-spacing:.5px;margin-top:2px;">build 2026-06-11e · guardar en Supabase</div>
   </div>
 
   <div class="body">
@@ -2015,7 +2015,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
 </script>
 <script>
 /* =======================================================================
-   LDC — Guardar Rate Request en Supabase (login por código de 6 dígitos)
+   LDC — Guardar Rate Request en Supabase (login por código de 6 u 8 dígitos)
    ======================================================================= */
 (function(){
   var SUPA_URL='https://kxjiryaxtalwjkfavwlr.supabase.co';
@@ -2114,10 +2114,10 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
     return new Promise(function(resolve){
       var ov=modal(
         '<div style="font-size:17px;font-weight:bold;color:#1A1A1A;margin-bottom:6px;">Iniciar sesión para guardar</div>'+
-        '<div style="font-size:13px;color:#666;margin-bottom:14px;line-height:1.45;">Te enviaremos un código de 6 dígitos a tu correo LDC.</div>'+
+        '<div style="font-size:13px;color:#666;margin-bottom:14px;line-height:1.45;">Te enviaremos un código a tu correo LDC. Cópialo completo (puede traer 6 u 8 dígitos).</div>'+
         '<input id="lg_email" type="email" placeholder="tucorreo@ldcorporation.com" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccc;border-radius:6px;font-size:14px;margin-bottom:10px;">'+
         '<div id="lg_codewrap" style="display:none;">'+
-          '<input id="lg_code" inputmode="numeric" maxlength="6" placeholder="Código de 6 dígitos" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccc;border-radius:6px;font-size:14px;letter-spacing:3px;margin-bottom:10px;">'+
+          '<input id="lg_code" inputmode="numeric" maxlength="8" placeholder="Código de tu correo" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccc;border-radius:6px;font-size:14px;letter-spacing:3px;margin-bottom:10px;">'+
         '</div>'+
         '<div id="lg_msg" style="font-size:12px;color:#C8202E;min-height:16px;margin-bottom:8px;"></div>'+
         '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
@@ -2146,7 +2146,7 @@ var COUNTRIES={"AD":"Andorra","AE":"United Arab Emirates","AF":"Afghanistan","AG
         } else {
           var em2=(emailEl.value||'').trim().toLowerCase();
           var tok=(codeEl.value||'').trim();
-          if(tok.length<6){setMsg('Escribe el código de 6 dígitos.');return;}
+          if(tok.length<6){setMsg('Escribe el código completo de tu correo.');return;}
           go.disabled=true;setMsg('Verificando…',true);
           c.auth.verifyOtp({email:em2,token:tok,type:'email'}).then(function(r){
             go.disabled=false;
